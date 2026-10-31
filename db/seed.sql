@@ -1,0 +1,1 @@
+-- Datos de prueba (se completa en la Fase 6)
