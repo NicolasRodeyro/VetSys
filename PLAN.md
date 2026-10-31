@@ -12,7 +12,7 @@ Leyenda: 🧪 = requiere tests · ❓ = requiere decisión del autor antes de im
 - [x] Crear la estructura de carpetas de `CLAUDE.md` §3 con `__init__.py`.
 - [x] `requirements.txt`: flask, psycopg[binary], python-dotenv, pytest, matplotlib.
 - [x] `.env.example` con `DATABASE_URL` y `FLASK_SECRET_KEY`; `.gitignore` (incluye `.env`, `__pycache__`, `.venv`).
-- [ ] `app/__init__.py` con app factory de Flask y una ruta `/` de prueba.
+- [x] `app/__init__.py` con app factory de Flask y una ruta `/` de prueba.
 - [ ] `app/persistencia/conexion.py`: obtener conexión desde `DATABASE_URL`, context manager de transacción (commit/rollback).
 - [ ] `scripts/migrar.py`: aplica en orden los archivos de `db/migraciones/` que no se aplicaron (tabla `migraciones_aplicadas`).
 - [ ] `app/dominio/excepciones.py` con `ReglaNegocio` y `TransicionInvalida`.
