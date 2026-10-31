@@ -14,7 +14,7 @@ Leyenda: 🧪 = requiere tests · ❓ = requiere decisión del autor antes de im
 - [x] `.env.example` con `DATABASE_URL` y `FLASK_SECRET_KEY`; `.gitignore` (incluye `.env`, `__pycache__`, `.venv`).
 - [x] `app/__init__.py` con app factory de Flask y una ruta `/` de prueba.
 - [x] `app/persistencia/conexion.py`: obtener conexión desde `DATABASE_URL`, context manager de transacción (commit/rollback).
-- [ ] `scripts/migrar.py`: aplica en orden los archivos de `db/migraciones/` que no se aplicaron (tabla `migraciones_aplicadas`).
+- [x] `scripts/migrar.py`: aplica en orden los archivos de `db/migraciones/` que no se aplicaron (tabla `migraciones_aplicadas`).
 - [ ] `app/dominio/excepciones.py` con `ReglaNegocio` y `TransicionInvalida`.
 - [ ] `README.md` con cómo instalar, configurar `.env`, migrar y correr.
 
