@@ -16,7 +16,7 @@ Leyenda: 🧪 = requiere tests · ❓ = requiere decisión del autor antes de im
 - [x] `app/persistencia/conexion.py`: obtener conexión desde `DATABASE_URL`, context manager de transacción (commit/rollback).
 - [x] `scripts/migrar.py`: aplica en orden los archivos de `db/migraciones/` que no se aplicaron (tabla `migraciones_aplicadas`).
 - [x] `app/dominio/excepciones.py` con `ReglaNegocio` y `TransicionInvalida`.
-- [ ] `README.md` con cómo instalar, configurar `.env`, migrar y correr.
+- [x] `README.md` con cómo instalar, configurar `.env`, migrar y correr.
 
 **Aceptación:** `flask run` levanta, `pytest` corre (aunque no haya tests), `scripts/migrar.py` conecta a Supabase.
 
