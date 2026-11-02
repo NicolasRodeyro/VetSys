@@ -14,7 +14,8 @@ from app.dominio.enums import MotivoRechazo
 from app.dominio.resultado_analisis import ValorResultado
 from app.servicios import catalogos, clientes, consultas, muestras, remitos, resultados, turnos
 from app.servicios.remitos import DetalleDeRecepcion
-from tests.servicios.conftest import AHORA, mascota, veterinario
+from tests.conftest import AHORA
+from tests.servicios.conftest import mascota, veterinario
 
 pytestmark = pytest.mark.usefixtures("con_seed", "ahora")
 

@@ -158,3 +158,32 @@ def test_obtener_lo_que_no_existe(cx):
         muestras.obtener_muestra(9999)
     with pytest.raises(NoEncontrado, match="la conservadora"):
         muestras.obtener_conservadora(9999)
+
+
+# --- Resumen para los listados ---
+
+def test_el_resumen_de_una_muestra_dice_de_quien_y_de_que_es(cx):
+    _, orden = nueva_orden()
+    muestra = muestras.registrar_extraccion(orden.id, "Dr. Gómez")
+
+    resumen = muestras.resumen_de_muestra(muestra.id)
+
+    assert (resumen.id, resumen.orden_id, resumen.analisis) == (muestra.id, orden.id, "Hemograma")
+    assert (resumen.mascota, resumen.cliente, resumen.estado) == ("Toby", "Ana Paz", "EXTRAIDA")
+    assert resumen.etiqueta == f"#{muestra.id} · Hemograma · Toby (Ana Paz) · EXTRAIDA"
+
+
+def test_listar_resumenes_por_estado_y_los_motivos_de_un_rechazo(cx):
+    from app.servicios import remitos
+    from tests.servicios.ayudas_circuito import conservadora_precintada, remito_con
+
+    conservadora, _ = conservadora_precintada("C-1")
+    remito = remito_con(conservadora)
+    remitos.cerrar_remito(remito.id)
+    remitos.despachar_remito(remito.id, "Transportes Sur")
+    remitos.registrar_recepcion(
+        remito.id, "Bioq. Pérez", [remitos.DetalleDeRecepcion(conservadora.id, "ROTO", 5.0)])
+
+    (rechazada,) = muestras.listar_resumenes_de_muestras("rechazada")
+    assert rechazada.estado == "RECHAZADA" and rechazada.motivos == ("PRECINTO_ROTO",)
+    assert muestras.listar_resumenes_de_muestras() == []  # sin filtro: solo las que siguen en curso

@@ -186,7 +186,7 @@ def test_recepcion_parcial_rechaza_solo_las_muestras_de_la_conservadora_con_prob
         remito.id, "Bioq. Pérez", [detalle(a), detalle(b, precinto="roto", observacion="Llegó abierto")])
 
     assert recibida.remito.estado.nombre == "RECIBIDO_PARCIAL"
-    assert len(recibida.alertas) == 1 and "PRECINTO_ROTO" in recibida.alertas[0]  # aviso para la clínica
+    assert len(recibida.alertas) == 1 and "precinto roto" in recibida.alertas[0]  # aviso para la clínica
     assert muestras.obtener_muestra(creadas_a[0][2].id).estado.nombre == "RECIBIDA"
     rechazada = muestras.obtener_muestra(creadas_b[0][2].id)
     assert rechazada.estado.nombre == "RECHAZADA" and rechazada.estado.motivos == (MotivoRechazo.PRECINTO_ROTO,)

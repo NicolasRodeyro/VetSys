@@ -6,6 +6,8 @@ no se persisten); sin eso el cambio de estado no quedaría en el historial.
 
 from __future__ import annotations
 
+from dataclasses import dataclass
+
 from app.dominio.cambio_estado import CambioEstado
 from app.dominio.conservadora import Conservadora
 from app.dominio.excepciones import ReglaNegocio
@@ -82,6 +84,45 @@ def precintar_conservadora(conservadora_id: int, numero_precinto: str, responsab
 
 
 # ---------------------------------------------------------------- consultas de lectura
+
+
+@dataclass(frozen=True)
+class ResumenMuestra:
+    """Lo que necesita un listado de muestras: a qué mascota, cliente y análisis corresponde."""
+
+    id: int
+    orden_id: int
+    analisis: str
+    mascota: str
+    cliente: str
+    estado: str
+    motivos: tuple[str, ...]
+
+    @property
+    def etiqueta(self) -> str:
+        return f"#{self.id} · {self.analisis} · {self.mascota} ({self.cliente}) · {self.estado}"
+
+
+def _resumir(ctx, muestra: Muestra) -> ResumenMuestra:
+    consulta = requerir(ctx.consultas.de_orden(muestra.orden), "la consulta de la orden", muestra.id)
+    responsable = consulta.mascota.responsable
+    return ResumenMuestra(
+        muestra.id, muestra.orden.id, muestra.tipo_analisis.nombre, consulta.mascota.nombre,
+        f"{responsable.nombre} {responsable.apellido}", muestra.estado.nombre,
+        tuple(motivo.value for motivo in muestra.estado.motivos))
+
+
+def resumen_de_muestra(muestra_id: int) -> ResumenMuestra:
+    with caso_de_uso() as ctx:
+        return _resumir(ctx, requerir(ctx.muestras.obtener(muestra_id), "la muestra", muestra_id))
+
+
+def listar_resumenes_de_muestras(estado: str | None = None) -> list[ResumenMuestra]:
+    """Resumen de las muestras en un estado, o de todas las que están en curso si no se indica."""
+    with caso_de_uso() as ctx:
+        nombres = ([v.texto_obligatorio(estado, "El estado", 20).upper()] if estado is not None
+                   else ["EXTRAIDA", "EMPAQUETADA", "EN_TRANSITO", "RECIBIDA"])
+        return [_resumir(ctx, m) for nombre in nombres for m in ctx.muestras.listar_por_estado(nombre)]
 
 
 def obtener_muestra(muestra_id: int) -> Muestra:

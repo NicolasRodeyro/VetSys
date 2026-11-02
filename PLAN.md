@@ -130,11 +130,11 @@ Cada uno en una transacción; suscriben los observadores al cargar muestras.
 
 **Decisión tomada: Flet** (Unidad 3 de la cátedra, guía de Flet). La interfaz solo llama a `servicios/` y `reportes/`; una clase por pantalla.
 
-- [ ] Reemplazar Flask por Flet: `requirements.txt`, `app/web/` pasa a `app/ui/`, archivo de arranque (`main.py`), `README.md` y `.env.example` (sin `FLASK_SECRET_KEY`).
-- [ ] Ventana principal con navegación por proceso y mensajes al usuario (SnackBar o diálogo) para los errores de `ReglaNegocio` / `TransicionInvalida` / `EntradaInvalida`.
-- [ ] Pantallas: clientes, mascotas (con historia clínica y advertencias de vacunas), agenda/turnos, consultas, muestras, remitos, recepción, resultados, comprobantes.
-- [ ] Pantalla de **trazabilidad de una muestra**: línea de tiempo del historial.
-- [ ] Pantalla de remito: estado actual y solo los botones de las operaciones permitidas en ese estado.
+- [x] Reemplazar Flask por Flet: `requirements.txt`, `app/web/` pasa a `app/ui/`, archivo de arranque (`main.py`), `README.md` y `.env.example` (sin `FLASK_SECRET_KEY`).
+- [x] Ventana principal con navegación por proceso y mensajes al usuario (SnackBar o diálogo) para los errores de `ReglaNegocio` / `TransicionInvalida` / `EntradaInvalida`.
+- [x] Pantallas: clientes, mascotas (con historia clínica y advertencias de vacunas), agenda/turnos, consultas, muestras, remitos, recepción, resultados, comprobantes.
+- [x] Pantalla de **trazabilidad de una muestra**: línea de tiempo del historial.
+- [x] Pantalla de remito: estado actual y solo los botones de las operaciones permitidas en ese estado.
 
 **Aceptación:** se puede recorrer el flujo completo desde la UI: consulta → orden → muestra → conservadora → remito → envío → recepción → resultado; y el flujo de rechazo con re-extracción.
 

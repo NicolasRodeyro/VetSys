@@ -1,5 +1,5 @@
-flask
-psycopg[binary]
+flet==1.0.4
+flet-desktop==1.0.4
 python-dotenv
 pytest
 matplotlib

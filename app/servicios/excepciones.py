@@ -1,7 +1,7 @@
 """Errores de la capa de servicios.
 
 Heredan de ReglaNegocio, así la interfaz puede atrapar todo con un solo
-`except ReglaNegocio` y mostrar el mensaje al usuario.
+`except ReglaNegocio` (que también se importa desde acá) y mostrar el mensaje al usuario.
 """
 
 from app.dominio.excepciones import ReglaNegocio

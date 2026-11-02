@@ -1,20 +1,6 @@
-"""Fixtures de los tests de servicios: reloj fijo y atajos para encontrar los datos del seed."""
+"""Atajos de los tests de servicios para encontrar los datos del seed por su nombre."""
 
-from datetime import datetime
-
-import pytest
-
-from app.servicios import catalogos, clientes, tiempo
-
-AHORA = datetime(2026, 11, 2, 12, 0, 0)
-
-
-@pytest.fixture
-def ahora(monkeypatch) -> datetime:
-    """Congela el reloj del sistema en el 02/11/2026 12:00."""
-    monkeypatch.setattr(tiempo, "ahora", lambda: AHORA)
-    return AHORA
-
+from app.servicios import catalogos, clientes
 
 # --- Atajos para encontrar los datos del seed por su nombre ---
 

@@ -7,7 +7,8 @@ from app.dominio.enums import Prioridad, TipoConsulta
 from app.dominio.excepciones import ReglaNegocio
 from app.servicios import clientes, consultas, turnos
 from app.servicios.excepciones import EntradaInvalida, NoEncontrado
-from tests.servicios.conftest import AHORA, mascota, veterinario
+from tests.conftest import AHORA
+from tests.servicios.conftest import mascota, veterinario
 
 pytestmark = pytest.mark.usefixtures("con_seed", "ahora")
 

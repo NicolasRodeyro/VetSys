@@ -139,3 +139,33 @@ def test_la_muestra_re_extraida_sigue_el_circuito_completo_hasta_el_resultado(cx
     assert muestras.obtener_muestra(rechazada.id).estado.nombre == "RECHAZADA"  # la primera no se tocó
     assert [c.nuevo for c in muestras.trazabilidad_de_muestra(nueva.id)] == [
         "EXTRAIDA", "EMPAQUETADA", "EN_TRANSITO", "RECIBIDA", "ANALIZADA"]
+
+
+# --- Valores tal como los carga el usuario ---
+
+def test_los_valores_ingresados_como_texto_se_sanitizan_y_convierten(cx):
+    from app.servicios.resultados import ValorIngresado
+
+    _, _, muestra = recibir()
+    resultados.registrar_resultado(muestra.id, "Bioq. Pérez", [
+        ValorIngresado(" Hematocrito ", "41,5", "%", "37", "55,0"),
+        ValorIngresado("Urea", "40", "mg/dl", "", None)])  # sin referencias: no se puede estar fuera de rango
+
+    guardado = resultados.obtener_resultado(muestra.id)
+    assert guardado.valores == (ValorResultado("Hematocrito", 41.5, "%", 37.0, 55.0),
+                                ValorResultado("Urea", 40.0, "mg/dl", None, None))
+
+
+@pytest.mark.parametrize("valor, mensaje", [
+    (dict(parametro="", valor="1", unidad="%"), "parámetro es obligatorio"),
+    (dict(parametro="X", valor="alto", unidad="%"), "valor no es un número"),
+    (dict(parametro="X", valor="1", unidad=""), "unidad es obligatorio"),
+    (dict(parametro="X", valor="1", unidad="%", ref_min="mucho"), "mínimo de referencia"),
+])
+def test_un_valor_ingresado_invalido_se_rechaza_y_no_toca_la_muestra(cx, valor, mensaje):
+    from app.servicios.resultados import ValorIngresado
+
+    _, _, muestra = recibir()
+    with pytest.raises(EntradaInvalida, match=mensaje):
+        resultados.registrar_resultado(muestra.id, "Bioq. Pérez", [ValorIngresado(**valor)])
+    assert muestras.obtener_muestra(muestra.id).estado.nombre == "RECIBIDA"
