@@ -26,19 +26,21 @@ El plan de trabajo está en `PLAN.md`. **Leelo antes de empezar cualquier tarea.
 | Capa | Tecnología |
 |---|---|
 | Lenguaje | Python 3.12, con type hints |
-| Web | Flask (app factory + blueprints) + Jinja2 |
-| Base de datos | PostgreSQL alojado en Supabase |
-| Acceso a datos | `psycopg` (v3) con SQL escrito a mano |
+| Interfaz | Flet (ventanas, controles y grillas, como en la guía de la cátedra) |
+| Base de datos | SQLite (archivo `vetsys.db`) |
+| Acceso a datos | módulo `sqlite3` de la biblioteca estándar, con SQL escrito a mano |
 | Tests | pytest |
-| Config | `python-dotenv` (archivo `.env`, nunca commiteado) |
-| Reportes | SQL de Postgres + matplotlib (gráficos) |
+| Config | `python-dotenv` (archivo `.env` opcional, nunca commiteado) |
+| Reportes | SQL (SQLite) + matplotlib (gráficos) |
 
 **Prohibido:**
 - ORMs (SQLAlchemy ORM, Django ORM, Peewee, etc.).
-- `supabase-py`, la API REST de Supabase o Supabase Auth. Supabase se usa **solo como un Postgres**.
+- Motores de base de datos con servidor (Postgres, MySQL, etc.) y servicios en la nube (Supabase, etc.).
 - Credenciales en el código o en el repo.
 
-Conexión: usar la cadena del **Session pooler** de Supabase (`DATABASE_URL` en `.env`). Debe poder apuntarse a un Postgres local cambiando solo esa variable.
+**Por qué SQLite:** es el motor que enseña la cátedra (semana 8) y el TP se entrega como un archivo comprimido con el código fuente: tiene que correr en cualquier máquina sin instalar un servidor ni configurar credenciales.
+
+Conexión: `sqlite3.connect()` sobre el archivo indicado por `DATABASE_PATH` (opcional, en `.env`; por defecto `vetsys.db` en la raíz del repo). En cada conexión se activa `PRAGMA foreign_keys = ON`.
 
 ---
 
@@ -46,7 +48,7 @@ Conexión: usar la cadena del **Session pooler** de Supabase (`DATABASE_URL` en 
 
 ```
 app/
-├── web/            # Flask: blueprints, rutas, formularios, templates
+├── ui/             # Flet: una clase por pantalla (presentación)
 ├── servicios/      # Casos de uso (registrar_recepcion, despachar_remito, ...)
 ├── dominio/        # Clases puras: entidades, estados (State), observadores (Observer)
 ├── persistencia/   # Conexión, repositorios, mapeo fila <-> objeto
@@ -61,11 +63,12 @@ tests/
 
 **Reglas de dependencia (obligatorias):**
 
-- `dominio/` **no importa nada** de `web/`, `servicios/`, `persistencia/` ni de Flask o psycopg. Es Python puro.
+- `dominio/` **no importa nada** de `web/`, `servicios/`, `persistencia/` ni de Flet o sqlite3. Es Python puro.
 - `servicios/` usa `dominio/` y `persistencia/`. Orquesta: carga objetos, llama métodos de dominio, guarda y maneja la transacción.
-- `web/` solo llama a `servicios/` y `reportes/`. **No hay lógica de negocio en las rutas ni SQL en la capa web.**
+- `ui/` solo llama a `servicios/` y `reportes/`. **No hay lógica de negocio en las pantallas ni SQL en la capa de interfaz.**
 - `persistencia/` conoce al dominio (para construir objetos) pero el dominio no la conoce.
 - Las reglas de negocio viven en el **dominio**, en la clase experta (GRASP Experto), no en los servicios.
+- **Servicios** (`servicios/`): cada función pública es un caso de uso y corre en **una transacción** (`caso_de_uso()`). Recibe ids o datos simples (lo que maneja la interfaz) y devuelve objetos del dominio. Antes de llegar al dominio, las entradas se validan y normalizan con `validaciones.py` (**sanitización**). Al cargar muestras, suscriben `RegistroTrazabilidad`. Sus errores (`EntradaInvalida`, `NoEncontrado`) heredan de `ReglaNegocio`, así la interfaz atrapa todo con un solo `except ReglaNegocio`. Para tener datos con que probar: `python scripts/sembrar.py`.
 
 ---
 
@@ -81,6 +84,7 @@ tests/
 Relaciones y decisiones clave:
 
 - **Mascota tiene exactamente un responsable** (Cliente), obligatorio en el constructor.
+- **Baja lógica** de Cliente y Mascota (nada se borra: conservan sus consultas, muestras y comprobantes). No se da de baja a un cliente con mascotas activas, no se le agregan mascotas a un cliente de baja, y una mascota de baja no se atiende ni recibe turnos.
 - **HistoriaClinica es clase propia**: alergias, antecedentes, vacunas aplicadas y consultas. Es la experta en el estado sanitario (`vacunas_pendientes(fecha)`).
 - **El esquema de vacunas cuelga de Especie** (lista de VacunaObligatoria con edad de aplicación y refuerzo).
 - **TipoAnalisis es una clase** (no enum): nombre, precio, tipo de muestra, rango de temperatura (min, max), horas máximas de tránsito. Es un catálogo.
@@ -88,9 +92,9 @@ Relaciones y decisiones clave:
 - **OrdenDerivacion 1..* Muestra, con una sola muestra activa** (no rechazada) a la vez. Permite re-extracción.
 - **Conservadora 1..* Muestra.** Una conservadora puede llevar muestras de distintas órdenes.
 - **RemitoBiologico 1..* Conservadora.** Un remito tiene una lista de TramoEnvio.
-- **El precinto es de la conservadora**, no de la muestra.
+- **El precinto es de la conservadora**, no de la muestra. `EstadoPrecinto` (INTACTO / ROTO) es el estado en que lo encuentra el laboratorio al recibir: se registra en el `DetalleRecepcion`.
 - **Recepcion 1..* DetalleRecepcion**: un detalle por conservadora (estado del precinto, temperatura de llegada, aceptada, motivos de rechazo).
-- **Comprobante único, emitido al cerrar la consulta**: incluye la consulta y los análisis derivados (precio desde TipoAnalisis). El cliente paga al irse de la clínica.
+- **Comprobante único, emitido al cerrar la consulta**: incluye la consulta y los análisis derivados (precio desde TipoAnalisis). El cliente paga al irse de la clínica. Los honorarios de la consulta se cargan al cerrarla (`Consulta.cerrar(honorarios, fecha_hora)`); se cobra una vez por orden, no por muestra. Una consulta cerrada ya no admite nuevas órdenes. Cada `ItemComprobante` indica si es un servicio de laboratorio (para el reporte de facturación).
 - **La muestra no vuelve a la clínica.** Vuelve el resultado (informe).
 - `ResultadoAnalisis` **no tiene estados propios**. Registrarlo pasa la muestra a *Analizada*.
 
@@ -140,10 +144,11 @@ Relaciones y decisiones clave:
 - Clase abstracta (`EstadoMuestra`, `EstadoRemito`) que implementa **todas** las operaciones lanzando `TransicionInvalida`.
 - Cada estado concreto **sobrescribe solo las operaciones que permite**.
 - La entidad **delega** en su estado actual. **Nada de `if estado == ...` en la entidad.**
+- Como en la guía de la cátedra, los métodos del estado reciben la muestra (o el remito) y es el estado quien llama a `cambiar_estado(...)`.
 - Los dos State colaboran: el remito no cambia el estado de las muestras, les pide `despachar()` / `recibir()`, y el estado de cada muestra valida la transición.
 
 **2. Observer — la Muestra es el sujeto.**
-- `ObservadorMuestra.actualizar(muestra, estado_anterior, estado_nuevo)`.
+- `ObservadorMuestra.actualizar(muestra, cambio)`: `cambio` es un `CambioEstado` con el estado anterior y el nuevo, la fecha, el responsable, la ubicación, la observación y los motivos de rechazo. Así el observador recibe todo lo que necesita (como en el ejemplo de la cátedra, donde el sujeto le pasa los datos al observador).
 - Observadores concretos:
   - `RegistroTrazabilidad`: agrega un `CambioEstado` al historial (obligatorio).
   - `AlertaRechazo`: si pasa a Rechazada, avisa a la clínica para coordinar la re-extracción (obligatorio).
@@ -160,9 +165,9 @@ Relaciones y decisiones clave:
 | Toda mascota tiene responsable | Constructor de `Mascota` |
 | Sin superposición de turnos | `Veterinario.agregar_turno()`: intervalos `[inicio, inicio+duración)`; los turnos cancelados no bloquean |
 | Esquema de vacunas | Al registrar una consulta: **se advierte, no se bloquea**. La consulta se registra igual y guarda las advertencias |
-| Compatibilidad en conservadora | `Conservadora.agregar_muestra()`: muestra en Extraída, rango de temperatura compatible, capacidad |
+| Compatibilidad en conservadora | `Conservadora.agregar_muestra()`: rango de temperatura compatible (el de la conservadora debe quedar dentro del que pide el análisis), capacidad y conservadora sin precintar. Que la muestra esté en Extraída lo valida su propio State (`empaquetar()`) |
 | Una muestra activa por orden | `OrdenDerivacion.agregar_muestra()` |
-| Precinto roto / temperatura → Rechazada | Recepción por conservadora + `EnTransito.recibir()` |
+| Precinto roto / temperatura → Rechazada | `DetalleRecepcion` (evalúa precinto y temperatura de llegada) + `EnTransito.recibir()` de la muestra |
 | Trazabilidad inmutable | Historial solo se agrega (Observer) + en la base, `cambios_estado` sin UPDATE ni DELETE |
 
 - Motivos de rechazo: enum `MotivoRechazo` (`PRECINTO_ROTO`, `TEMPERATURA_FUERA_DE_RANGO`). Puede haber más de uno. Se guardan en el `CambioEstado`.
@@ -181,20 +186,28 @@ Relaciones y decisiones clave:
 - Type hints en todas las firmas públicas.
 - Atributos internos con `_` y acceso mediante métodos o properties cuando haya invariantes que proteger (ej. no exponer la lista de muestras para que la modifiquen desde afuera).
 - Excepciones de dominio propias en `dominio/excepciones.py`: `ReglaNegocio`, `TransicionInvalida`.
-- Fechas con `datetime` (con zona horaria `America/Argentina/Cordoba` al persistir).
-- Montos con `Decimal`, nunca `float`.
+- Fechas con `datetime` (hora local, sin zona horaria). Al persistir se guardan como texto ISO 8601.
+- Montos con `Decimal`, nunca `float`. Al persistir se guardan como `TEXT` (SQLite no tiene tipo decimal exacto) y el repositorio los convierte a `Decimal`.
 
 ## 6. Persistencia
 
-- SQL parametrizado siempre (`%s`), **nunca** f-strings con valores.
+- SQL parametrizado siempre (`?`), **nunca** f-strings con valores.
 - Esquema versionado en `db/migraciones/NNN_descripcion.sql`, aplicado en orden con un script `scripts/migrar.py`.
 - Los estados se guardan como texto (`'EN_TRANSITO'`) y el repositorio los reconstruye con un diccionario `nombre → clase de estado`.
 - Cada caso de uso de `servicios/` corre en **una sola transacción** (si falla algo, rollback de todo).
-- La tabla `cambios_estado` tiene un trigger que impide UPDATE y DELETE.
+- La tabla `cambios_estado` tiene un trigger que impide UPDATE y DELETE (`RAISE(ABORT, ...)`).
+- Las migraciones se aplican sentencia por sentencia dentro de una transacción; `scripts/migrar.py` ya soporta triggers.
+- **Un `Contexto` por caso de uso** (`persistencia/contexto.py`): una conexión (una transacción) más un mapa de identidad compartido por todos los repositorios, que se piden unos a otros lo que necesitan. Uso: `with transaccion() as conexion: ctx = Contexto(conexion)`.
+- **Las entidades tienen un atributo `id`** (`None` hasta que se guardan) que asigna la persistencia, para que la interfaz pueda referirse a ellas (una mascota, una consulta, una muestra). El dominio no lo usa en ninguna regla. El mapa de identidad (`persistencia/identidad.py`) relaciona cada objeto con su fila: decide INSERT o UPDATE al guardar, y garantiza que dentro de un contexto cada fila sea un único objeto.
+- **Reconstruir no es crear.** Al cargar no se repiten las reglas de creación (una muestra no se vuelve a registrar en su orden, un comprobante no se recalcula con los precios de hoy). `persistencia/reconstruccion.py` es el único módulo que arma objetos salteando sus constructores; los tests de guardar y volver a cargar avisan si el dominio cambia y quedó desfasado.
+- **Las listas que solo crecen** (vacunas aplicadas, advertencias, historial de la muestra, tramos, muestras de una conservadora) se guardan insertando únicamente lo nuevo. El historial no se actualiza nunca: el trigger lo impide.
+- **Los observadores no se persisten.** Quien carga una muestra suscribe `RegistroTrazabilidad` antes de cambiarle el estado; si no, `guardar` lanza `HistorialIncompleto` en lugar de dejar un historial con huecos.
+- La agenda del veterinario se carga por defecto (hace falta completa para detectar superposiciones); `con_agenda=False` solo cuando interesa el veterinario, como al cargar una consulta.
 
 ## 7. Tests
 
 - Todo el dominio se testea **sin base de datos** (`tests/dominio/`).
+- Los tests de integración usan un archivo SQLite temporal (`tmp_path` de pytest), nunca `vetsys.db`.
 - Por cada transición válida, un test. Por cada transición inválida relevante, un test que espere `TransicionInvalida`.
 - Por cada validación de negocio, al menos un test del caso OK y uno del caso que falla.
 - Correr `pytest` antes de marcar una fase como terminada.
