@@ -3,7 +3,7 @@
 Sistema para una red de clínicas veterinarias con derivación de muestras a un laboratorio central.
 TP Integrador de Desarrollo de Aplicaciones con Objetos (UTN).
 
-Stack: Python 3.12 · Flask · PostgreSQL (Supabase) · psycopg 3 · pytest.
+Stack: Python 3.12 · Flet 1.0.4 (interfaz) · SQLite (`sqlite3`) · pytest.
 
 ## 1. Instalación
 
@@ -17,70 +17,76 @@ pip install -r requirements.txt
 
 En Linux/macOS, activar con `source .venv/bin/activate`.
 
-## 2. Configurar `.env`
+> **La primera vez que se abre la aplicación**, Flet descarga su cliente de escritorio
+> (una sola vez, necesita internet). Conviene abrirla una vez con conexión antes de una demostración.
+
+## 2. Usar la aplicación
+
+```powershell
+python main.py
+```
+
+- La primera vez **crea la base de datos** sola (`vetsys.db`, un archivo SQLite; no hace falta ningún servidor).
+- Si la base está vacía, la ventana avisa y ofrece **«Cargar datos de prueba»**: 2 clínicas, 1 laboratorio,
+  4 veterinarios, 3 especies con su esquema de vacunas, 5 tipos de análisis y 10 clientes con mascotas.
+- Arriba a la derecha está el campo **Operador**: la persona que usa el sistema. Queda registrada como
+  responsable de cada operación (extracción, empaquetado, despacho, recepción...).
+
+El menú tiene dos grupos:
+
+| Atención | Laboratorio |
+|---|---|
+| Clientes, Mascotas, Turnos, Consultas, Comprobantes | Muestras, Conservadoras, Remitos, Recepción, Resultados |
+
+Para empezar un recorrido completo: **Consultas** (registrar consulta y emitir una orden de análisis) →
+**Muestras** (extracción) → **Conservadoras** (empaquetar y precintar) → **Remitos** (crear, cerrar, despachar)
+→ **Recepción** (el laboratorio constata precinto y temperatura) → **Resultados** → **Comprobantes**.
+Si el precinto llega roto, la muestra se rechaza y se re-extrae desde **Muestras**.
+
+## 3. Configuración (opcional)
+
+La base es un archivo y no necesita credenciales. Con los valores por defecto no hace falta ningún `.env`.
+Para cambiar algo:
 
 ```powershell
 copy .env.example .env
 ```
 
-Completar en `.env`:
-
-- `DATABASE_URL`: cadena de conexión a Postgres (ver abajo).
-- `FLASK_SECRET_KEY`: cualquier texto largo. Se puede generar con
-  `python -c "import secrets; print(secrets.token_hex(32))"`.
+- `DATABASE_PATH`: ruta del archivo de la base (por defecto `vetsys.db` en la raíz del repo).
 
 El archivo `.env` está en `.gitignore` y **nunca se commitea**.
 
-### Obtener la cadena de Supabase
+## 4. Scripts de línea de comandos (opcionales)
 
-1. Entrar al proyecto en [supabase.com](https://supabase.com/dashboard).
-2. Botón **Connect** (arriba en la página del proyecto).
-3. Pestaña **Connection string** → tipo **URI** → elegir **Session pooler**.
-4. Copiar la cadena. Tiene esta forma:
-   `postgresql://postgres.<id-proyecto>:[YOUR-PASSWORD]@aws-0-<region>.pooler.supabase.com:5432/postgres`
-5. Reemplazar `[YOUR-PASSWORD]` por la contraseña de la base (sin los corchetes).
-   Si no la recordás: **Project Settings → Database → Reset database password**.
-   Si la contraseña tiene caracteres como `@`, `:`, `/` o `#`, hay que escaparlos
-   (ej. `@` → `%40`) o elegir una contraseña sin esos caracteres.
-
-Se usa el **Session pooler** (puerto 5432) porque funciona en redes IPv4 y
-mantiene una sesión por conexión, como un Postgres normal.
-
-### Plan B: Postgres local
-
-Cambiar solo `DATABASE_URL`, por ejemplo:
-
-```
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/vetsys
-```
-
-## 3. Migrar la base
+La aplicación ya crea la base y carga los datos de prueba sola, pero se puede hacer a mano:
 
 ```powershell
-python scripts/migrar.py
+python scripts/migrar.py     # crea la base / aplica las migraciones de db/migraciones/ que falten
+python scripts/sembrar.py    # carga los datos de prueba (no hace nada si ya hay datos)
 ```
 
-Aplica en orden los archivos de `db/migraciones/` que todavía no se aplicaron
-(se registran en la tabla `migraciones_aplicadas`). Se puede correr las veces
-que haga falta.
+Para empezar de cero, borrar `vetsys.db`.
 
-## 4. Correr
+## 5. Tests
 
 ```powershell
-flask run          # http://127.0.0.1:5000
-pytest             # tests
+pytest
 ```
+
+Los tests de `dominio/` no usan base de datos. Los de integración, servicios e interfaz usan un archivo
+SQLite temporal, nunca `vetsys.db`. Los de la interfaz prueban la lógica de cada pantalla sin abrir una ventana.
 
 ## Estructura
 
 ```
+main.py             # Arranque de la aplicación
 app/
-├── web/            # Flask: blueprints, rutas, templates
-├── servicios/      # Casos de uso
+├── ui/             # Flet: una clase por pantalla (presentación)
+├── servicios/      # Casos de uso, cada uno en una transacción; sanitización de entradas
 ├── dominio/        # Clases puras (entidades, State, Observer)
-├── persistencia/   # Conexión y repositorios (SQL a mano)
+├── persistencia/   # Conexión, migraciones y repositorios (SQL a mano)
 └── reportes/       # Reportes y gráficos
 db/migraciones/     # Esquema versionado
-scripts/migrar.py   # Aplica migraciones
-tests/              # dominio/ (sin base) e integracion/ (con base)
+scripts/            # migrar.py, sembrar.py
+tests/              # dominio/, integracion/, servicios/ y ui/
 ```

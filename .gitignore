@@ -218,3 +218,7 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Base de datos SQLite local (se genera con scripts/migrar.py)
+vetsys.db
+*.db-journal
