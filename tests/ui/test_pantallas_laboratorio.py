@@ -378,7 +378,7 @@ def test_registrar_el_resultado_avisa_al_responsable_y_se_puede_consultar(p_resu
     p_resultados.ver()
     assert p_resultados.resultado.visible and p_resultados.nota_resultado.value == "Leucocitosis"
     assert p_resultados.tabla_resultado.cantidad == 2
-    situaciones = [fila.cells[-1].content.value for fila in p_resultados.tabla_resultado._tabla.rows]
+    situaciones = [fila[-1] for fila in p_resultados.tabla_resultado.textos()]
     assert situaciones == ["Normal", "⚠ Fuera de rango"]
 
 

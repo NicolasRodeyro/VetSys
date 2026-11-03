@@ -9,6 +9,9 @@ from typing import TYPE_CHECKING
 from app.dominio.especie import VacunaObligatoria
 from app.dominio.excepciones import ReglaNegocio
 
+from app.dominio.fechas import sumar_meses
+
+
 if TYPE_CHECKING:
     from app.dominio.consulta import Consulta
     from app.dominio.mascota import Mascota
@@ -84,3 +87,19 @@ class HistoriaClinica:
             if aplicada.vacuna == vacuna and aplicada.fecha <= fecha
         ]
         return max(fechas) if fechas else None
+
+    def vacunas_pendientes_con_vencimiento(self, fecha: date) -> list[tuple[VacunaObligatoria, date]]:
+        """Las mismas vacunas que `vacunas_pendientes(fecha)`, cada una con la fecha en que venció.
+
+        - Nunca aplicada: venció al cumplir la edad de aplicación (nacimiento + edad_aplicacion_meses).
+        - Aplicada con refuerzo: venció a la última aplicación + refuerzo_cada_meses.
+        Se parte de `vacunas_pendientes` para que la regla de qué está pendiente siga en un solo lugar.
+        """
+        return [(vacuna, self._vencimiento(vacuna, fecha)) for vacuna in self.vacunas_pendientes(fecha)]
+
+    def _vencimiento(self, vacuna: VacunaObligatoria, fecha: date) -> date:
+        ultima = self._ultima_aplicacion(vacuna, fecha)
+        if ultima is None:
+            return sumar_meses(self._mascota.fecha_nacimiento, vacuna.edad_aplicacion_meses)
+        # Si está pendiente y ya se aplicó, es porque tiene refuerzo y venció.
+        return sumar_meses(ultima, vacuna.refuerzo_cada_meses)
