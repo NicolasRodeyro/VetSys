@@ -1,4 +1,5 @@
-"""La ventana principal: menú lateral, campo de operador y el área donde se muestra cada pantalla."""
+"""La ventana principal: menú lateral con la marca, barra superior (ubicación y operador)
+y el área donde se muestra cada pantalla."""
 
 from __future__ import annotations
 
@@ -24,28 +25,36 @@ class Aplicacion:
         self._vistas: dict[str, ft.Control] = {}
         self._actual: str = PANTALLAS[0].clave
 
-        self.area = ft.Container(expand=True, padding=ft.Padding.all(24))
-        self.menu = ft.ListView(spacing=2, width=230, padding=ft.Padding.symmetric(vertical=8, horizontal=8))
+        self.area = ft.Container(expand=True, padding=ft.Padding.symmetric(vertical=24, horizontal=32))
+        self.menu = ft.ListView(spacing=2, expand=True, padding=ft.Padding.symmetric(vertical=4, horizontal=12))
         self.aviso_base_vacia = ft.Container(visible=False)
+        self.ubicacion = ft.Row(spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
 
     # ----------------------------------------------------------- armado
 
     def build(self) -> ft.Control:
-        encabezado = ft.Container(
+        marca = ft.Container(
             content=ft.Row([
-                ft.Icon(ft.Icons.PETS, color=ft.Colors.TEAL_700, size=28),
-                ft.Column([ft.Text("VetSys", size=20, weight=ft.FontWeight.BOLD),
-                           tema.texto_tenue("Red de clínicas veterinarias y laboratorio")], spacing=0),
-                ft.Container(expand=True),
-                self.operador,
-            ], vertical_alignment=ft.CrossAxisAlignment.CENTER),
-            padding=ft.Padding.symmetric(vertical=10, horizontal=16),
-            border=ft.Border(bottom=ft.BorderSide(1, ft.Colors.OUTLINE_VARIANT)),
+                ft.Container(ft.Icon(ft.Icons.PETS, color=tema.LATERAL, size=22), width=40, height=40,
+                             bgcolor="#7FD1C3", border_radius=ft.BorderRadius.all(10), alignment=ft.Alignment.CENTER),
+                ft.Column([ft.Text("VetSys", size=20, weight=ft.FontWeight.BOLD, color=ft.Colors.WHITE),
+                           ft.Text("Clínicas y laboratorio", size=11, color=tema.LATERAL_TEXTO)], spacing=0),
+            ], spacing=12),
+            padding=ft.Padding.only(left=20, right=20, top=22, bottom=14),
         )
-        cuerpo = ft.Row(
-            [self.menu, ft.VerticalDivider(width=1), ft.Column([self.aviso_base_vacia, self.area], expand=True, spacing=0)],
-            expand=True, spacing=0)
-        return ft.Column([encabezado, cuerpo], expand=True, spacing=0)
+        lateral = ft.Container(
+            content=ft.Column([marca, self.menu], spacing=0, expand=True),
+            width=250, bgcolor=tema.LATERAL,
+        )
+        self.operador.prefix_icon = ft.Icons.BADGE_OUTLINED
+        barra = ft.Container(
+            content=ft.Row([self.ubicacion, ft.Container(expand=True), self.operador],
+                           vertical_alignment=ft.CrossAxisAlignment.CENTER),
+            padding=ft.Padding.symmetric(vertical=10, horizontal=32), bgcolor=tema.SUPERFICIE,
+            border=ft.Border(bottom=ft.BorderSide(1, tema.BORDE)),
+        )
+        principal = ft.Column([barra, self.aviso_base_vacia, self.area], expand=True, spacing=0)
+        return ft.Row([lateral, principal], expand=True, spacing=0)
 
     def _armar_menu(self) -> None:
         controles: list[ft.Control] = []
@@ -54,12 +63,27 @@ class Aplicacion:
             if pantalla.grupo != grupo_actual:
                 grupo_actual = pantalla.grupo
                 controles.append(ft.Container(
-                    tema.texto_tenue(grupo_actual.upper(), 11), padding=ft.Padding.only(left=12, top=12, bottom=2)))
+                    ft.Text(grupo_actual.upper(), size=11, weight=ft.FontWeight.W_600, color="#6FA39B"),
+                    padding=ft.Padding.only(left=12, top=16, bottom=4)))
+            elegida = clave == self._actual
+            color = ft.Colors.WHITE if elegida else tema.LATERAL_TEXTO
             controles.append(ft.ListTile(
-                leading=ft.Icon(pantalla.icono), title=ft.Text(pantalla.titulo), dense=True,
-                selected=clave == self._actual, on_click=partial(self.ir_a, clave),
-                selected_tile_color=ft.Colors.TEAL_50, shape=ft.RoundedRectangleBorder(radius=8)))
+                leading=ft.Icon(pantalla.icono, color="#7FD1C3" if elegida else tema.LATERAL_TEXTO, size=20),
+                title=ft.Text(pantalla.titulo, color=color,
+                              weight=ft.FontWeight.W_600 if elegida else ft.FontWeight.NORMAL),
+                dense=True, selected=elegida, on_click=partial(self.ir_a, clave),
+                selected_tile_color=tema.LATERAL_ACTIVO, hover_color="#0F4A46",
+                shape=ft.RoundedRectangleBorder(radius=8)))
         self.menu.controls = controles
+
+    def _armar_ubicacion(self, pantalla: Pantalla) -> None:
+        """La «miga de pan» de la barra superior: grupo › pantalla."""
+        self.ubicacion.controls = [
+            ft.Icon(pantalla.icono, color=tema.PRIMARIO, size=20),
+            tema.texto_tenue(pantalla.grupo, 14),
+            tema.texto_tenue("›", 14),
+            ft.Text(pantalla.titulo, size=14, weight=ft.FontWeight.W_600, color=tema.TEXTO),
+        ]
 
     # ----------------------------------------------------------- navegación
 
@@ -76,6 +100,7 @@ class Aplicacion:
             self._vistas[clave] = pantalla.build()
         self.area.content = self._vistas[clave]
         self._armar_menu()
+        self._armar_ubicacion(pantalla)
         pantalla.al_mostrar()
 
     # ----------------------------------------------------------- base vacía
@@ -85,13 +110,15 @@ class Aplicacion:
         vacia = arranque.base_vacia()
         self.aviso_base_vacia.visible = vacia
         if vacia:
+            fondo, color = tema.TONOS["progreso"]
             self.aviso_base_vacia.content = ft.Row([
-                ft.Icon(ft.Icons.INFO_OUTLINE, color=ft.Colors.AMBER_800),
-                ft.Text("La base de datos está vacía: faltan clínicas, veterinarios y análisis.", expand=True),
+                ft.Icon(ft.Icons.INFO_OUTLINE, color=color),
+                ft.Text("La base de datos está vacía: faltan clínicas, veterinarios y análisis.", color=color,
+                        weight=ft.FontWeight.W_500, expand=True),
                 c.boton("Cargar datos de prueba", ft.Icons.DOWNLOAD_OUTLINED, self._cargar_datos_de_prueba, "secundario"),
-            ])
-            self.aviso_base_vacia.bgcolor = ft.Colors.AMBER_50
-            self.aviso_base_vacia.padding = ft.Padding.symmetric(vertical=8, horizontal=16)
+            ], vertical_alignment=ft.CrossAxisAlignment.CENTER)
+            self.aviso_base_vacia.bgcolor = fondo
+            self.aviso_base_vacia.padding = ft.Padding.symmetric(vertical=10, horizontal=32)
 
     def _cargar_datos_de_prueba(self) -> None:
         arranque.cargar_datos_de_prueba()
