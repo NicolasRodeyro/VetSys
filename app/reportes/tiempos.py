@@ -149,8 +149,13 @@ def agrupar(envios: list[Envio], transportistas: dict[int, list[str]]) -> list[G
 
 # ---------------------------------------------------------------- reporte completo
 
-COLUMNAS = ["Agrupación", "Grupo", "Muestras", "Tránsito (mediana)", "Tránsito (P90)", "Fuera de plazo",
-            "Procesamiento (mediana)", "Procesamiento (P90)", "Todavía en tránsito"]
+COLUMNAS = ["Agrupación", "Grupo", "Muestras", "Tránsito (mediana / P90)", "Fuera de plazo",
+            "Procesamiento (mediana / P90)", "En tránsito"]
+
+
+def _par(mediana: float | None, p90: float | None) -> str:
+    """«24,0 h / 27,2 h»; «—» si no hay datos."""
+    return formato.SIN_DATO if mediana is None else f"{formato.horas(mediana)} / {formato.horas(p90)}"
 
 
 def generar(filtro: FiltroReporte) -> ResultadoReporte:
@@ -160,10 +165,10 @@ def generar(filtro: FiltroReporte) -> ResultadoReporte:
     grupos = agrupar(envios, transportistas)
     resumenes = [(g, resumir(g.envios)) for g in grupos]
 
-    filas = [[g.agrupacion, g.nombre, str(r.muestras), formato.horas(r.transito_mediana), formato.horas(r.transito_p90),
+    filas = [[g.agrupacion, g.nombre, str(r.muestras), _par(r.transito_mediana, r.transito_p90),
               f"{r.fuera_de_plazo} de {r.con_transito} ({formato.tasa(r.fuera_de_plazo, r.con_transito)})"
               if r.con_transito else formato.SIN_DATO,
-              formato.horas(r.procesamiento_mediana), formato.horas(r.procesamiento_p90), str(r.en_transito)]
+              _par(r.procesamiento_mediana, r.procesamiento_p90), str(r.en_transito)]
              for g, r in resumenes]
 
     notas = [f"Despachos del {filtro.desde:%d/%m/%Y} al {filtro.hasta:%d/%m/%Y}: {len(envios)} muestra(s)."

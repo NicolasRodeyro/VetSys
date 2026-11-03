@@ -141,5 +141,5 @@ def test_el_reporte_de_tiempos_muestra_el_grafico_de_mediana_y_p90(pantalla):
     datos.remito("R1", "Clínica Centro", m, ("Transportes Sur",))
     elegir_reporte(pantalla, "tiempos")
     pantalla.generar()
-    assert ["Clínica", "Clínica Centro", "1", "6,0 h", "6,0 h", "0 de 1 (0,0 %)", "—", "—", "0"] in pantalla.tabla.textos()
+    assert ["Clínica", "Clínica Centro", "1", "6,0 h / 6,0 h", "0 de 1 (0,0 %)", "—", "0"] in pantalla.tabla.textos()
     assert pantalla.lugar_grafico.content.src.startswith(b"\x89PNG")

@@ -102,26 +102,26 @@ def test_calcula_los_tiempos_por_clinica_transportista_y_total(historiales):
     assert r.columnas[:2] == ["Agrupación", "Grupo"]
     assert r.filas == [
         # Centro: tránsitos [6, 24, 28, 30] -> mediana 26, P90 29,4; solo la de 28 h superó su máximo de 24 h
-        ["Clínica", "Clínica Centro", "5", "26,0 h", "29,4 h", "1 de 4 (25,0 %)", "12,0 h", "21,6 h", "1"],
-        ["Clínica", "Clínica Norte", "1", "10,0 h", "10,0 h", "0 de 1 (0,0 %)", "—", "—", "0"],
-        ["Transportista", "Logística Norte", "3", "24,0 h", "27,2 h", "1 de 3 (33,3 %)", "15,0 h", "22,2 h", "0"],
-        ["Transportista", "Transportes Sur", "4", "24,0 h", "28,8 h", "0 de 3 (0,0 %)", "9,0 h", "11,4 h", "1"],
-        ["Total", "Todas las muestras", "6", "24,0 h", "29,2 h", "1 de 5 (20,0 %)", "12,0 h", "21,6 h", "1"],
+        ["Clínica", "Clínica Centro", "5", "26,0 h / 29,4 h", "1 de 4 (25,0 %)", "12,0 h / 21,6 h", "1"],
+        ["Clínica", "Clínica Norte", "1", "10,0 h / 10,0 h", "0 de 1 (0,0 %)", "—", "0"],
+        ["Transportista", "Logística Norte", "3", "24,0 h / 27,2 h", "1 de 3 (33,3 %)", "15,0 h / 22,2 h", "0"],
+        ["Transportista", "Transportes Sur", "4", "24,0 h / 28,8 h", "0 de 3 (0,0 %)", "9,0 h / 11,4 h", "1"],
+        ["Total", "Todas las muestras", "6", "24,0 h / 29,2 h", "1 de 5 (20,0 %)", "12,0 h / 21,6 h", "1"],
     ]
 
 
 def test_la_muestra_de_agosto_no_entra_y_la_que_sigue_en_transito_se_informa(historiales):
     r = tiempos.generar(FiltroReporte(date(2026, 9, 1), date(2026, 9, 30)))
     total = r.filas[-1]
-    assert total[2] == "6" and total[8] == "1"  # R6 (despachada el 31/08) queda afuera; R5 sigue en tránsito
+    assert total[2] == "6" and total[6] == "1"  # R6 (despachada el 31/08) queda afuera; R5 sigue en tránsito
 
 
 def test_el_rango_se_aplica_a_la_fecha_de_despacho_incluyendo_el_ultimo_dia(historiales):
     solo_agosto = tiempos.generar(FiltroReporte(date(2026, 8, 31), date(2026, 8, 31)))
     assert solo_agosto.filas == [
-        ["Clínica", "Clínica Centro", "1", "4,0 h", "4,0 h", "0 de 1 (0,0 %)", "—", "—", "0"],
-        ["Transportista", "Transportes Sur", "1", "4,0 h", "4,0 h", "0 de 1 (0,0 %)", "—", "—", "0"],
-        ["Total", "Todas las muestras", "1", "4,0 h", "4,0 h", "0 de 1 (0,0 %)", "—", "—", "0"]]
+        ["Clínica", "Clínica Centro", "1", "4,0 h / 4,0 h", "0 de 1 (0,0 %)", "—", "0"],
+        ["Transportista", "Transportes Sur", "1", "4,0 h / 4,0 h", "0 de 1 (0,0 %)", "—", "0"],
+        ["Total", "Todas las muestras", "1", "4,0 h / 4,0 h", "0 de 1 (0,0 %)", "—", "0"]]
 
     hasta_el_10 = tiempos.generar(FiltroReporte(date(2026, 9, 1), date(2026, 9, 10)))
     assert hasta_el_10.filas[-1][2] == "2"  # R1 y R2, despachadas el 10/09 a las 08:00
@@ -130,9 +130,9 @@ def test_el_rango_se_aplica_a_la_fecha_de_despacho_incluyendo_el_ultimo_dia(hist
 def test_filtra_por_la_clinica_de_origen_del_remito(historiales):
     r = tiempos.generar(FiltroReporte(date(2026, 9, 1), date(2026, 9, 30), clinica("Clínica Norte")))
     assert r.filas == [
-        ["Clínica", "Clínica Norte", "1", "10,0 h", "10,0 h", "0 de 1 (0,0 %)", "—", "—", "0"],
-        ["Transportista", "Logística Norte", "1", "10,0 h", "10,0 h", "0 de 1 (0,0 %)", "—", "—", "0"],
-        ["Total", "Todas las muestras", "1", "10,0 h", "10,0 h", "0 de 1 (0,0 %)", "—", "—", "0"]]
+        ["Clínica", "Clínica Norte", "1", "10,0 h / 10,0 h", "0 de 1 (0,0 %)", "—", "0"],
+        ["Transportista", "Logística Norte", "1", "10,0 h / 10,0 h", "0 de 1 (0,0 %)", "—", "0"],
+        ["Total", "Todas las muestras", "1", "10,0 h / 10,0 h", "0 de 1 (0,0 %)", "—", "0"]]
 
 
 def test_el_grafico_compara_mediana_y_p90_de_cada_grupo(historiales):
@@ -152,12 +152,12 @@ def test_un_remito_sin_tramos_se_agrupa_aparte(con_seed):
     m = datos.muestra(datos.nueva_orden(), ("EN_TRANSITO", "2026-09-10 08:00"), ("RECIBIDA", "2026-09-10 11:00"))
     datos.remito("R1", "Clínica Centro", m)  # sin transportistas
     r = tiempos.generar(FiltroReporte(date(2026, 9, 1), date(2026, 9, 30)))
-    assert ["Transportista", SIN_TRAMOS, "1", "3,0 h", "3,0 h", "0 de 1 (0,0 %)", "—", "—", "0"] in r.filas
+    assert ["Transportista", SIN_TRAMOS, "1", "3,0 h / 3,0 h", "0 de 1 (0,0 %)", "—", "0"] in r.filas
 
 
 def test_con_solo_las_muestras_en_transito_no_hay_grafico_pero_si_filas(con_seed):
     m = datos.muestra(datos.nueva_orden(), ("EN_TRANSITO", "2026-09-10 08:00"))
     datos.remito("R1", "Clínica Centro", m, ("Transportes Sur",))
     r = tiempos.generar(FiltroReporte(date(2026, 9, 1), date(2026, 9, 30)))
-    assert r.filas[0] == ["Clínica", "Clínica Centro", "1", "—", "—", "—", "—", "—", "1"]
+    assert r.filas[0] == ["Clínica", "Clínica Centro", "1", "—", "—", "—", "1"]
     assert r.grafico is None

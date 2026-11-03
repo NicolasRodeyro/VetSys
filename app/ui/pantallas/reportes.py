@@ -27,7 +27,7 @@ class PantallaReportes(Pantalla):
 
     def __init__(self, sesion) -> None:
         super().__init__(sesion)
-        self.reporte = c.desplegable("Reporte", ancho=360, al_elegir=self.elegir_reporte)
+        self.reporte = c.desplegable("Reporte", ancho=440, al_elegir=self.elegir_reporte)
         c.poner_opciones(self.reporte, [(clave, modulo.TITULO) for clave, modulo in REPORTES.items()])
         self.reporte.value = next(iter(REPORTES))
         self.descripcion = tema.texto_tenue("", 13)
