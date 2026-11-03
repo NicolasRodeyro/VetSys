@@ -73,7 +73,7 @@ El archivo `.env` está en `.gitignore` y **nunca se commitea**.
 
 ## 4. Scripts de línea de comandos (opcionales)
 
-La aplicación ya crea la base y carga los datos de prueba sola, pero se puede hacer a mano:
+La aplicación crea la base y ofrece cargar datos de prueba si está vacía. También se puede hacer a mano:
 
 ```powershell
 python scripts/migrar.py     # crea la base / aplica las migraciones de db/migraciones/ que falten
@@ -90,6 +90,11 @@ pytest
 
 Los tests de `dominio/` no usan base de datos. Los de integración, servicios e interfaz usan un archivo
 SQLite temporal, nunca `vetsys.db`. Los de la interfaz prueban la lógica de cada pantalla sin abrir una ventana.
+
+## Diseño y defensa
+
+- [Diagramas y decisiones de diseño](docs/diseno.md).
+- [Guion de demostración y preguntas para el coloquio](docs/demo-y-coloquio.md).
 
 ## Estructura
 

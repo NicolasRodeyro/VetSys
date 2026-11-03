@@ -160,8 +160,10 @@ Cada reporte es un módulo de `app/reportes/` con `TITULO`, `DESCRIPCION` y `gen
 
 ## Fase 10 — Entrega y defensa
 
-- [ ] Diagrama de clases (dominio + State + Observer) y diagramas de estado de muestra y remito.
-- [ ] Documento de decisiones de diseño (justificar: comprobante al cierre de consulta, una muestra activa por orden, no desempaquetar, State en remito, advertencia de vacunas).
-- [ ] Guion de demo: flujo feliz + flujo con precinto roto y re-extracción.
+- [x] Diagrama de clases (dominio + State + Observer) y diagramas de estado de muestra y remito: `docs/diseno.md`.
+- [x] Documento de decisiones de diseño (justificar: comprobante al cierre de consulta, una muestra activa por orden, no desempaquetar, State en remito, advertencia de vacunas): `docs/diseno.md`.
+- [x] Guion de demo: flujo feliz + flujo con precinto roto y re-extracción: `docs/demo-y-coloquio.md`.
 - [ ] Entrega: archivo comprimido con el código fuente (sin `.env`, `.venv` ni `vetsys.db`), que corra en una máquina limpia siguiendo el `README.md`: instalar, `python scripts/migrar.py`, datos de prueba y correr.
 - [ ] Preparar el coloquio: todos los integrantes presentes y capaces de explicar cualquier parte del código.
+
+La guía de preguntas está preparada en `docs/demo-y-coloquio.md`; la presencia y preparación efectiva de los integrantes se verifica con el equipo.
