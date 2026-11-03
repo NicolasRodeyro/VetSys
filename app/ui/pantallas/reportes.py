@@ -42,7 +42,10 @@ class PantallaReportes(Pantalla):
         self.tabla: c.Tabla | None = None
         self.lugar_tabla = ft.Container()
         self.lugar_grafico = ft.Container()
-        self.resultado = tema.seccion(self.titulo_resultado, self.notas, self.lugar_tabla, self.lugar_grafico)
+        self.lugar_detalle = ft.Container()  # una segunda tabla, cuando el reporte la trae
+        self.detalle: c.Tabla | None = None
+        self.resultado = tema.seccion(self.titulo_resultado, self.notas, self.lugar_tabla, self.lugar_grafico,
+                                      self.lugar_detalle)
         self.resultado.visible = False
         self._mostrar_descripcion()
 
@@ -87,5 +90,13 @@ class PantallaReportes(Pantalla):
             self.lugar_tabla.content = self.tabla.vista
             self.lugar_grafico.content = (ft.Image(src=graficos.a_png(resultado.grafico), width=800)
                                           if resultado.grafico else None)
+            if resultado.detalle_filas:
+                self.detalle = c.Tabla(resultado.detalle_columnas, altura_maxima=320)
+                self.detalle.cargar(enumerate(resultado.detalle_filas))
+                self.lugar_detalle.content = ft.Column(
+                    [ft.Text(resultado.detalle_titulo, size=15, weight=ft.FontWeight.W_600), self.detalle.vista], spacing=tema.ESPACIO)
+            else:
+                self.detalle = None
+                self.lugar_detalle.content = None
             self.resultado.visible = True
         self.ejecutar(accion)

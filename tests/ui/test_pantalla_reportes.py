@@ -4,6 +4,7 @@ import pytest
 
 from app.reportes import REPORTES
 from app.ui.pantallas.reportes import TODAS, PantallaReportes
+from tests.reportes import datos
 from tests.reportes.test_facturacion import cerrar_consulta_el
 from tests.ui.conftest import elegir, sin_parametros
 
@@ -16,6 +17,11 @@ def pantalla(sesion_ui) -> PantallaReportes:
     pantalla.build()
     pantalla.al_mostrar()
     return pantalla
+
+
+def elegir_reporte(pantalla, clave):
+    pantalla.reporte.value = clave
+    pantalla.elegir_reporte()
 
 
 @pytest.fixture
@@ -37,6 +43,7 @@ def test_al_abrir_propone_los_dos_meses_anteriores_y_todas_las_clinicas(pantalla
 
 
 def test_generar_muestra_la_tabla_las_notas_y_el_grafico(pantalla, un_comprobante, mensajes):
+    elegir_reporte(pantalla, "facturacion")
     pantalla.generar()
 
     assert mensajes.errores == []
@@ -49,6 +56,7 @@ def test_generar_muestra_la_tabla_las_notas_y_el_grafico(pantalla, un_comprobant
 
 
 def test_filtrar_por_otra_clinica_deja_la_tabla_sin_ventas(pantalla, un_comprobante):
+    elegir_reporte(pantalla, "facturacion")
     elegir(pantalla.clinica, "Clínica Norte")
     pantalla.generar()
 
@@ -73,3 +81,65 @@ def test_cambiar_de_reporte_oculta_el_resultado_anterior(pantalla, un_comprobant
     pantalla.generar()
     pantalla.elegir_reporte()
     assert not pantalla.resultado.visible
+
+
+# ---------------------------------------------------------------- los otros tres reportes
+
+def test_los_cuatro_reportes_estan_en_la_pantalla_en_este_orden(pantalla):
+    assert [o.key for o in pantalla.reporte.options] == ["tiempos", "rechazos", "vacunas", "facturacion"]
+
+
+@pytest.mark.parametrize("clave", ["tiempos", "rechazos", "vacunas", "facturacion"])
+def test_cada_reporte_se_genera_sin_errores_aunque_no_haya_movimientos(pantalla, mensajes, clave):
+    elegir_reporte(pantalla, clave)
+    pantalla.generar()
+
+    assert mensajes.errores == [] and pantalla.resultado.visible
+    assert pantalla.titulo_resultado.value == REPORTES[clave].TITULO
+
+
+def test_el_reporte_de_vacunas_usa_el_hasta_como_fecha_de_corte(pantalla, mensajes):
+    elegir_reporte(pantalla, "vacunas")
+    pantalla.hasta.value = "2026-11-02"
+    pantalla.generar()
+
+    assert mensajes.errores == []
+    assert "Fecha de corte: 02/11/2026. 9 mascota(s) con 21 vacuna(s) pendiente(s)." in pantalla.notas.controls[0].value
+    assert len(pantalla.tabla.textos()) == 21
+    assert pantalla.lugar_grafico.content.src.startswith(b"\x89PNG") and pantalla.detalle is None
+
+
+@pytest.fixture
+def una_muestra_rechazada():
+    m = datos.muestra(datos.nueva_orden(), ("EN_TRANSITO", "2026-10-05 08:00"),
+                      ("RECHAZADA", "2026-10-06 09:00", ("PRECINTO_ROTO",)))
+    datos.remito("R1", "Clínica Centro", m, ("Transportes Sur",), "RECHAZADO", ("2026-10-06 09:00", "ROTO", 5.0, False))
+
+
+def test_el_reporte_de_rechazos_muestra_la_tabla_y_el_detalle_de_lo_rechazado(pantalla, una_muestra_rechazada, mensajes):
+    elegir_reporte(pantalla, "rechazos")
+    pantalla.generar()
+
+    assert mensajes.errores == []
+    assert ["Total", "Todas las muestras", "1", "1", "100,0 %"] in pantalla.tabla.textos()
+    assert pantalla.detalle is not None and pantalla.lugar_detalle.content is not None
+    assert pantalla.detalle.textos()[0][5:] == ["R1", "Transportes Sur", "Precinto roto", "Roto", "5 °C"]
+
+
+def test_cambiar_a_un_reporte_sin_detalle_oculta_la_segunda_tabla(pantalla, una_muestra_rechazada):
+    elegir_reporte(pantalla, "rechazos")
+    pantalla.generar()
+    assert pantalla.detalle is not None
+
+    elegir_reporte(pantalla, "tiempos")
+    pantalla.generar()
+    assert pantalla.detalle is None and pantalla.lugar_detalle.content is None
+
+
+def test_el_reporte_de_tiempos_muestra_el_grafico_de_mediana_y_p90(pantalla):
+    m = datos.muestra(datos.nueva_orden(), ("EN_TRANSITO", "2026-10-05 08:00"), ("RECIBIDA", "2026-10-05 14:00"))
+    datos.remito("R1", "Clínica Centro", m, ("Transportes Sur",))
+    elegir_reporte(pantalla, "tiempos")
+    pantalla.generar()
+    assert ["Clínica", "Clínica Centro", "1", "6,0 h", "6,0 h", "0 de 1 (0,0 %)", "—", "—", "0"] in pantalla.tabla.textos()
+    assert pantalla.lugar_grafico.content.src.startswith(b"\x89PNG")
