@@ -149,8 +149,8 @@ def agrupar(envios: list[Envio], transportistas: dict[int, list[str]]) -> list[G
 
 # ---------------------------------------------------------------- reporte completo
 
-COLUMNAS = ["Agrupación", "Grupo", "Muestras", "Tránsito (mediana / P90)", "Fuera de plazo",
-            "Procesamiento (mediana / P90)", "En tránsito"]
+COLUMNAS = ["Agrupación", "Grupo", "Muestras", "Tránsito (med. / P90)", "Fuera de plazo",
+            "Procesam. (med. / P90)", "En tránsito"]
 
 
 def _par(mediana: float | None, p90: float | None) -> str:

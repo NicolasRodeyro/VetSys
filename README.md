@@ -32,16 +32,31 @@ python main.py
 - Arriba a la derecha está el campo **Operador**: la persona que usa el sistema. Queda registrada como
   responsable de cada operación (extracción, empaquetado, despacho, recepción...).
 
-El menú tiene dos grupos:
+El menú tiene tres grupos:
 
-| Atención | Laboratorio |
-|---|---|
-| Clientes, Mascotas, Turnos, Consultas, Comprobantes | Muestras, Conservadoras, Remitos, Recepción, Resultados |
+| Atención | Laboratorio | Reportes |
+|---|---|---|
+| Clientes, Mascotas, Turnos, Consultas, Comprobantes | Muestras, Conservadoras, Remitos, Recepción, Resultados | Reportes |
 
 Para empezar un recorrido completo: **Consultas** (registrar consulta y emitir una orden de análisis) →
 **Muestras** (extracción) → **Conservadoras** (empaquetar y precintar) → **Remitos** (crear, cerrar, despachar)
 → **Recepción** (el laboratorio constata precinto y temperatura) → **Resultados** → **Comprobantes**.
 Si el precinto llega roto, la muestra se rechaza y se re-extrae desde **Muestras**.
+
+### Reportes
+
+La pantalla **Reportes** calcula, al pedirlo, cuatro análisis sobre la operación. Cada uno tiene filtros (rango de fechas y
+clínica), una tabla y un gráfico:
+
+| Reporte | Qué muestra |
+|---|---|
+| Tiempos de tránsito y procesamiento | Mediana y P90 en horas por clínica de origen y por transportista, y cuántas muestras superaron el plazo de su análisis |
+| Tasa de rechazo de muestras | Rechazadas sobre las que llegaron, por clínica, transportista y motivo, con el detalle de cada rechazo |
+| Vacunas pendientes y días de atraso | Qué vacunas le faltan a cada mascota, hace cuántos días vencieron y cómo contactar al responsable |
+| Facturación por clínica y servicio | Lo facturado por mes, clínica y servicio, con la variación contra el mes anterior |
+
+Con los datos de prueba, algunos reportes salen vacíos porque dependen de muestras ya recibidas o de consultas cerradas:
+para verlos con movimiento, hay que recorrer el circuito de arriba. El de vacunas pendientes funciona de inmediato.
 
 ## 3. Configuración (opcional)
 
