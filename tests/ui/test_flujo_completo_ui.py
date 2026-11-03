@@ -97,7 +97,7 @@ def test_el_flujo_completo_con_rechazo_y_re_extraccion_se_recorre_desde_la_inter
     muestras.selector.lista_ordenes.value = muestras.selector.lista_ordenes.options[0].key
     muestras.selector._orden_elegida()
     muestras.registrar_extraccion()
-    primera = int(muestras.tabla._tabla.rows[0].cells[0].content.value)
+    primera = int(muestras.tabla.textos()[0][0])
 
     # 4. Primer envío: llega con el precinto roto -> se rechaza y se avisa a la clínica
     enviar_por_pantallas(ui, "C-1", "ROTO")

@@ -25,6 +25,23 @@ OPERACIONES_MUESTRA = {
 }
 
 
+# Color con que se muestra cada estado en las tablas (ver tema.TONOS). Una celda cuyo texto
+# figura acá se dibuja como insignia; cualquier otro texto se muestra normal.
+TONO_DE_ESTADO = {
+    # Muestras
+    "Extraída": "neutro", "Empaquetada": "info", "En tránsito": "progreso",
+    "Recibida": "info", "Analizada": "ok", "Rechazada": "peligro",
+    # Remitos
+    "Abierto": "neutro", "Cerrado": "info", "Recibido": "ok", "Recibido parcial": "progreso", "Rechazado": "peligro",
+    # Clientes, mascotas, turnos y consultas
+    "Activo": "ok", "Activa": "ok", "De baja": "neutro",
+    "Programado": "info", "Cancelado": "neutro",
+    "Abierta": "progreso", "Cerrada": "ok",
+    # Prioridad de la orden y situación de un valor de resultado
+    "Urgente": "peligro", "Normal": "ok", "⚠ Fuera de rango": "peligro",
+}
+
+
 def estado_muestra(codigo: str) -> str:
     return ESTADOS_MUESTRA.get(codigo, codigo)
 
