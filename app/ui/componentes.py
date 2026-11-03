@@ -68,8 +68,8 @@ def boton(texto: str, icono: ft.IconData | None, al_hacer_clic: Callable[[], Non
         return ft.TextButton(texto, icon=icono, on_click=al_hacer_clic, visible=visible,
                              style=ft.ButtonStyle(shape=_FORMA_BOTON, color=tema.PRIMARIO, icon_color=tema.PRIMARIO))
     return ft.Button(texto, icon=icono, on_click=al_hacer_clic, visible=visible, style=ft.ButtonStyle(
-        shape=_FORMA_BOTON, padding=_RELLENO_BOTON, bgcolor=tema.PRIMARIO, color=ft.Colors.WHITE,
-        icon_color=ft.Colors.WHITE, elevation=0))
+        shape=_FORMA_BOTON, padding=_RELLENO_BOTON, bgcolor=tema.PRIMARIO, color=tema.SOBRE_PRIMARIO,
+        icon_color=tema.SOBRE_PRIMARIO, elevation=0))
 
 
 class Tabla:
