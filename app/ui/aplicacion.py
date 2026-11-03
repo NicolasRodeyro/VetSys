@@ -29,6 +29,9 @@ class Aplicacion:
         self.menu = ft.ListView(spacing=2, expand=True, padding=ft.Padding.symmetric(vertical=4, horizontal=12))
         self.aviso_base_vacia = ft.Container(visible=False)
         self.ubicacion = ft.Row(spacing=8, vertical_alignment=ft.CrossAxisAlignment.CENTER)
+        self.icono_modo = ft.Icon(ft.Icons.LIGHT_MODE_OUTLINED, color=tema.TEXTO_TENUE, size=20)
+        self.modo_oscuro = ft.Switch(value=False, tooltip="Modo oscuro", active_color=tema.PRIMARIO,
+                                     on_change=self._al_cambiar_modo)
 
     # ----------------------------------------------------------- armado
 
@@ -48,7 +51,8 @@ class Aplicacion:
         )
         self.operador.prefix_icon = ft.Icons.BADGE_OUTLINED
         barra = ft.Container(
-            content=ft.Row([self.ubicacion, ft.Container(expand=True), self.operador],
+            content=ft.Row([self.ubicacion, ft.Container(expand=True), self.operador,
+                            ft.Row([self.icono_modo, self.modo_oscuro], spacing=4)],
                            vertical_alignment=ft.CrossAxisAlignment.CENTER),
             padding=ft.Padding.symmetric(vertical=10, horizontal=32), bgcolor=tema.SUPERFICIE,
             border=ft.Border(bottom=ft.BorderSide(1, tema.BORDE)),
@@ -102,6 +106,14 @@ class Aplicacion:
         self._armar_menu()
         self._armar_ubicacion(pantalla)
         pantalla.al_mostrar()
+
+    # ----------------------------------------------------------- modo claro / oscuro
+
+    def _al_cambiar_modo(self) -> None:
+        oscuro = bool(self.modo_oscuro.value)
+        tema.cambiar_modo(self._page, oscuro)
+        self.icono_modo.icon = ft.Icons.DARK_MODE_OUTLINED if oscuro else ft.Icons.LIGHT_MODE_OUTLINED
+        self._page.update()
 
     # ----------------------------------------------------------- base vacía
 

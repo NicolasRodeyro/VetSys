@@ -13,17 +13,37 @@ ESPACIO_GRANDE = 20
 RADIO = 12
 
 # --- Paleta -----------------------------------------------------------------
-PRIMARIO = "#0F766E"         # verde azulado clínico: botones, foco, selección
-PRIMARIO_SUAVE = "#E6F4F1"   # fondo de lo seleccionado
-LATERAL = "#0B3B38"          # menú lateral
+# Las pantallas usan colores *del tema* (nombres como "primary" o "surface"), no valores fijos:
+# Flet los resuelve al dibujar según el modo activo. Así, cambiar entre modo claro y oscuro es
+# solo cambiar `page.theme_mode`, sin reconstruir ninguna pantalla.
+PRIMARIO = ft.Colors.PRIMARY                    # botones, foco, selección
+SOBRE_PRIMARIO = ft.Colors.ON_PRIMARY           # texto sobre un botón primario
+PRIMARIO_SUAVE = ft.Colors.PRIMARY_CONTAINER    # fondo de lo seleccionado
+FONDO = ft.Colors.SURFACE_CONTAINER_LOW         # fondo de la ventana (las tarjetas van encima)
+SUPERFICIE = ft.Colors.SURFACE                  # tarjetas, barra superior, campos
+BORDE = ft.Colors.OUTLINE_VARIANT
+TEXTO = ft.Colors.ON_SURFACE
+TEXTO_TENUE = ft.Colors.ON_SURFACE_VARIANT
+CABECERA_TABLA = ft.Colors.SURFACE_CONTAINER
+
+# El menú lateral es oscuro en los dos modos.
+LATERAL = "#0B3B38"
 LATERAL_TEXTO = "#B8D4CF"
 LATERAL_ACTIVO = "#14524D"
-FONDO = "#F3F6F5"            # fondo de la ventana (las tarjetas van en blanco encima)
-SUPERFICIE = "#FFFFFF"
-BORDE = "#DDE5E3"
-TEXTO = "#1E2A28"
-TEXTO_TENUE = "#5F6F6C"
-CABECERA_TABLA = "#F6F9F8"
+
+# Valores concretos de cada modo: (claro, oscuro)
+_PALETAS: dict[str, tuple[str, str]] = {
+    "primary": ("#0F766E", "#5EC4B6"),
+    "on_primary": ("#FFFFFF", "#00302B"),
+    "primary_container": ("#E6F4F1", "#163F3B"),
+    "on_primary_container": ("#0B3B38", "#C8EDE7"),
+    "surface_container_low": ("#F3F6F5", "#101615"),
+    "surface": ("#FFFFFF", "#18201F"),
+    "outline_variant": ("#DDE5E3", "#2F3B39"),
+    "on_surface": ("#1E2A28", "#E2EAE8"),
+    "on_surface_variant": ("#5F6F6C", "#9DB0AC"),
+    "surface_container": ("#F6F9F8", "#1F2927"),
+}
 
 # Tonos de las insignias de estado: (fondo, texto)
 TONOS: dict[str, tuple[str, str]] = {
@@ -35,18 +55,33 @@ TONOS: dict[str, tuple[str, str]] = {
 }
 
 
+def _tema(oscuro: bool) -> ft.Theme:
+    colores = {nombre: valores[1 if oscuro else 0] for nombre, valores in _PALETAS.items()}
+    return ft.Theme(
+        color_scheme_seed=_PALETAS["primary"][0],
+        color_scheme=ft.ColorScheme(**colores),
+        scaffold_bgcolor=colores["surface_container_low"],
+        divider_color=colores["outline_variant"],
+    )
+
+
 def aplicar_tema(page: ft.Page, titulo: str) -> None:
     page.title = titulo
+    page.theme = _tema(oscuro=False)
+    page.dark_theme = _tema(oscuro=True)
     page.theme_mode = ft.ThemeMode.LIGHT
-    page.theme = ft.Theme(
-        color_scheme_seed=PRIMARIO,
-        color_scheme=ft.ColorScheme(primary=PRIMARIO, on_surface=TEXTO, on_surface_variant=TEXTO_TENUE,
-                                    outline_variant=BORDE, surface=SUPERFICIE),
-        scaffold_bgcolor=FONDO,
-        divider_color=BORDE,
-    )
     page.bgcolor = FONDO
     page.padding = 0
+
+
+def es_oscuro(page: ft.Page) -> bool:
+    return page.theme_mode == ft.ThemeMode.DARK
+
+
+def cambiar_modo(page: ft.Page, oscuro: bool) -> None:
+    """Pasa de modo claro a oscuro (o al revés). Las pantallas no se reconstruyen: sus colores
+    son del tema y se vuelven a resolver al redibujar."""
+    page.theme_mode = ft.ThemeMode.DARK if oscuro else ft.ThemeMode.LIGHT
 
 
 def texto_tenue(texto: str, size: int = 12) -> ft.Text:
@@ -71,7 +106,7 @@ def titulo_pantalla(titulo: str, subtitulo: str = "") -> ft.Column:
 
 
 def seccion(titulo: ft.Text | str, *controles: ft.Control) -> ft.Container:
-    """Una tarjeta blanca con un título, que agrupa controles relacionados."""
+    """Una tarjeta con un título, que agrupa controles relacionados."""
     encabezado = titulo if isinstance(titulo, ft.Text) else ft.Text(titulo)
     encabezado.size = encabezado.size or 16
     encabezado.weight = ft.FontWeight.W_600
