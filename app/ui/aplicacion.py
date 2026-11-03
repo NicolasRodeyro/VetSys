@@ -19,6 +19,9 @@ from app.ui.sesion import Sesion
 class Aplicacion:
     def __init__(self, page: ft.Page) -> None:
         self._page = page
+        # Calendario y reloj en español (días, meses y botones).
+        page.locale_configuration = ft.LocaleConfiguration(
+            supported_locales=[ft.Locale("es", "AR")], current_locale=ft.Locale("es", "AR"))
         self.operador = c.campo("Operador", ancho=230, sugerencia="Quién opera el sistema")
         self.sesion = Sesion(MensajeroFlet(page), lambda: self.operador.value, page.update)
         self._pantallas: dict[str, Pantalla] = {clase.clave: clase(self.sesion) for clase in PANTALLAS}

@@ -11,20 +11,30 @@ from app.servicios import clientes as svc_clientes
 from app.servicios import consultas as svc_consultas
 from app.ui import componentes as c
 from app.ui import tema
+from app.ui.buscador_clientes import BuscadorClientes
 from app.ui.entradas import en_texto
 from app.ui.pantalla import Pantalla, manejador
 
 
 class SelectorMascota:
-    """Se busca un cliente (por DNI, apellido o nombre) y se elige una de sus mascotas activas."""
+    """Se busca un cliente (por DNI, apellido o nombre) y se elige una de sus mascotas activas.
+
+    Mientras se escribe, debajo del campo aparece la lista de clientes que coinciden (con el campo
+    vacío, todos). Al tocar uno se cargan sus mascotas. Enter o «Buscar» siguen sirviendo para
+    cargar las mascotas de todos los clientes que coinciden con lo escrito.
+    """
 
     def __init__(self, pantalla: Pantalla, al_elegir: Callable[[], None] | None = None) -> None:
         self._pantalla = pantalla
         self._al_elegir = al_elegir
-        self.busqueda = c.campo("Buscar cliente (DNI, apellido o nombre)", expandir=True, al_enviar=self.buscar)
+        self.buscador = BuscadorClientes(
+            pantalla, "Buscar cliente (DNI, apellido o nombre)", self._cliente_elegido,
+            al_escribir=self._descartar_mascota, al_enviar=self.buscar)
+        self.busqueda = self.buscador.busqueda
         self.lista = c.desplegable("Mascota", expandir=True, al_elegir=self._elegida)
         self.vista = ft.Column([
             tema.fila(self.busqueda, c.boton("Buscar", ft.Icons.SEARCH, self.buscar, "secundario")),
+            self.buscador.panel,
             self.lista,
         ], spacing=tema.ESPACIO)
 
@@ -32,14 +42,32 @@ class SelectorMascota:
     def mascota_id(self) -> int | None:
         return c.clave_de(self.lista)
 
+    def _cliente_elegido(self, cliente) -> None:
+        opciones = self._opciones_de([cliente])
+        c.poner_opciones(self.lista, opciones)
+        if len(opciones) == 1:
+            self.lista.value = opciones[0][0]  # una sola mascota: ya queda elegida
+        elif not opciones:
+            self._pantalla.sesion.mensajero.error("Ese cliente no tiene mascotas activas.")
+        self._elegida()
+
+    def _descartar_mascota(self) -> None:
+        # Al cambiar el texto, la mascota que había quedado elegida ya no corresponde al cliente.
+        if self.lista.options or self.lista.value:
+            c.poner_opciones(self.lista, [])
+            self._elegida()
+
+    @staticmethod
+    def _opciones_de(clientes: list) -> list[tuple[str, str]]:
+        return [(str(m.id), f"{m.nombre} ({m.especie.nombre}) · {cliente.apellido}, {cliente.nombre}")
+                for cliente in clientes for m in cliente.mascotas if m.activa]
+
     @manejador
     def buscar(self) -> None:
+        """Enter o «Buscar»: carga las mascotas de todos los clientes que coinciden con lo escrito."""
         def accion() -> None:
-            opciones = []
-            for cliente in svc_clientes.buscar_clientes(self.busqueda.value or ""):
-                for m in cliente.mascotas:
-                    if m.activa:
-                        opciones.append((str(m.id), f"{m.nombre} ({m.especie.nombre}) · {cliente.apellido}, {cliente.nombre}"))
+            self.buscador.ocultar()
+            opciones = self._opciones_de(svc_clientes.buscar_clientes(self.busqueda.value or ""))
             c.poner_opciones(self.lista, opciones)
             if not opciones:
                 self._pantalla.sesion.mensajero.error("No se encontró ninguna mascota con ese cliente.")
@@ -48,11 +76,13 @@ class SelectorMascota:
 
     @manejador
     def _elegida(self) -> None:
+        self.lista.error_text = None
         if self._al_elegir:
             self._al_elegir()
 
     def limpiar(self) -> None:
-        self.busqueda.value = ""
+        self.buscador.limpiar()
+        self.lista.error_text = None
         c.poner_opciones(self.lista, [])
 
 

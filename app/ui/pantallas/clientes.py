@@ -21,8 +21,10 @@ class PantallaClientes(Pantalla):
         self._cliente_id: int | None = None
 
         # Búsqueda
+        # La tabla se actualiza mientras se escribe y al tildar «incluir bajas»: no hace falta apretar «Buscar».
         self.busqueda = c.campo("DNI, apellido o nombre", expandir=True, al_enviar=self.buscar)
-        self.incluir_bajas = ft.Checkbox(label="Incluir clientes de baja", value=False)
+        self.busqueda.on_change = self.buscar
+        self.incluir_bajas = ft.Checkbox(label="Incluir clientes de baja", value=False, on_change=self.buscar)
         self.tabla = c.Tabla(
             ["DNI", "Apellido", "Nombre", "Teléfono", "Email", "Estado"], al_elegir=self.elegir,
             texto_boton="Editar", vacia="No hay clientes que coincidan con la búsqueda.")

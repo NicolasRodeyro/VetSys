@@ -143,3 +143,30 @@ def test_un_error_inesperado_no_rompe_la_ventana(pantalla, mensajes, monkeypatch
     monkeypatch.setattr(svc, "buscar_clientes", lambda *a, **k: 1 / 0)
     pantalla.buscar()
     assert "Error inesperado" in mensajes.errores[0]
+
+
+# ---- búsqueda en vivo ----
+
+def test_la_tabla_se_filtra_mientras_se_escribe(pantalla):
+    assert sin_parametros(pantalla.busqueda.on_change)
+    pantalla.busqueda.value = "p"
+    pantalla.busqueda.on_change()
+    primeros = pantalla.tabla.cantidad
+    pantalla.busqueda.value = "paz"
+    pantalla.busqueda.on_change()
+    assert pantalla.tabla.cantidad == 1 and 1 < primeros < 10
+    pantalla.busqueda.value = ""
+    pantalla.busqueda.on_change()
+    assert pantalla.tabla.cantidad == 10
+
+
+def test_tildar_incluir_bajas_actualiza_la_tabla_sin_apretar_buscar(pantalla):
+    ana = svc.buscar_clientes("30111222")[0]
+    for m in ana.mascotas:
+        svc.dar_de_baja_mascota(m.id)
+    svc.dar_de_baja_cliente(ana.id)
+    pantalla.buscar()
+    assert pantalla.tabla.cantidad == 9
+    pantalla.incluir_bajas.value = True
+    pantalla.incluir_bajas.on_change()
+    assert pantalla.tabla.cantidad == 10

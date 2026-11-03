@@ -10,6 +10,7 @@ from app.servicios import clientes as svc
 from app.servicios.excepciones import EntradaInvalida
 from app.ui import componentes as c
 from app.ui import tema
+from app.ui.buscador_clientes import BuscadorClientes
 from app.ui.entradas import a_fecha, en_texto, hoy_texto
 from app.ui.pantalla import Pantalla, manejador
 
@@ -28,7 +29,10 @@ class PantallaMascotas(Pantalla):
         self._mascota_id: int | None = None
 
         # 1. Cliente y sus mascotas
-        self.busqueda = c.campo("Buscar cliente (DNI, apellido o nombre)", expandir=True, al_enviar=self.buscar_clientes)
+        self.buscador = BuscadorClientes(
+            self, "Buscar cliente (DNI, apellido o nombre)", self._cliente_de_la_lista,
+            al_escribir=self._descartar_cliente, al_enviar=self.buscar_clientes)
+        self.busqueda = self.buscador.busqueda
         self.clientes = c.desplegable("Cliente", expandir=True, al_elegir=self.elegir_cliente)
         self.tabla = c.Tabla(["Nombre", "Especie", "Sexo", "Nacimiento", "Estado"], al_elegir=self.elegir_mascota,
                              texto_boton="Elegir", vacia="Este cliente todavía no tiene mascotas.")
@@ -61,7 +65,7 @@ class PantallaMascotas(Pantalla):
         cliente = tema.seccion(
             "Cliente y mascotas",
             tema.fila(self.busqueda, c.boton("Buscar", ft.Icons.SEARCH, self.buscar_clientes, "secundario")),
-            self.clientes, self.tabla.vista)
+            self.buscador.panel, self.clientes, self.tabla.vista)
         formulario = tema.seccion(
             self.titulo_formulario,
             tema.fila(self.nombre, self.especie, self.sexo, self.nacimiento),
@@ -90,8 +94,23 @@ class PantallaMascotas(Pantalla):
 
     # ----------------------------------------------------------- cliente
 
+    def _cliente_de_la_lista(self, cliente) -> None:
+        """Se tocó un cliente de la lista que aparece al escribir: queda elegido."""
+        c.poner_opciones(self.clientes, [(str(cliente.id), f"{cliente.apellido}, {cliente.nombre} ({cliente.dni})")])
+        self.clientes.value = str(cliente.id)
+        self.elegir_cliente()
+
+    def _descartar_cliente(self) -> None:
+        """Se cambió el texto: el cliente que había quedado elegido ya no corresponde."""
+        if self.clientes.options or self.clientes.value:
+            c.poner_opciones(self.clientes, [])
+            self.elegir_cliente()
+
     @manejador
     def buscar_clientes(self) -> None:
+        """Enter o «Buscar»: carga en la lista todos los clientes que coinciden con lo escrito."""
+        self.buscador.ocultar()
+
         def accion() -> None:
             lista = svc.buscar_clientes(self.busqueda.value or "")
             c.poner_opciones(self.clientes, ((str(x.id), f"{x.apellido}, {x.nombre} ({x.dni})") for x in lista))

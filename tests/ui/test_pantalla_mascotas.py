@@ -149,3 +149,40 @@ def test_los_botones_no_reciben_el_evento(pantalla):
 def test_la_fecha_por_defecto_de_la_vacuna_es_hoy(pantalla):
     pantalla.elegir_mascota(mascota("30111222", "Toby").id)
     assert pantalla.fecha_vacuna.value == date(2026, 11, 2).isoformat()
+
+
+# ---- búsqueda en vivo del cliente ----
+
+def escribir_cliente(p, texto):
+    p.busqueda.value = texto
+    p.buscador._al_escribir()
+
+
+def test_al_escribir_aparece_la_lista_de_clientes(pantalla):
+    escribir_cliente(pantalla, "paz")
+    assert pantalla.buscador.panel.visible
+    assert [f.title.value for f in pantalla.buscador.filas.controls] == ["Paz, Ana"]
+
+
+def test_tocar_un_cliente_de_la_lista_muestra_sus_mascotas(pantalla):
+    escribir_cliente(pantalla, "paz")
+    pantalla.buscador.filas.controls[0].on_click()
+    assert pantalla.busqueda.value == "Paz, Ana"
+    assert pantalla.clientes.value == pantalla.clientes.options[0].key
+    assert pantalla.tabla.cantidad == 2  # Toby y Mimi
+    assert not pantalla.buscador.panel.visible
+
+
+def test_al_seguir_escribiendo_se_descarta_el_cliente_elegido(pantalla):
+    escribir_cliente(pantalla, "paz")
+    pantalla.buscador.filas.controls[0].on_click()
+    escribir_cliente(pantalla, "paze")
+    assert pantalla.clientes.options == [] and pantalla.tabla.cantidad == 0
+    assert not pantalla.historia.visible
+
+
+def test_buscar_con_el_boton_sigue_funcionando_y_cierra_la_lista(pantalla):
+    escribir_cliente(pantalla, "paz")
+    pantalla.buscar_clientes()
+    assert not pantalla.buscador.panel.visible
+    assert len(pantalla.clientes.options) == 1
