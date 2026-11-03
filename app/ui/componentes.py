@@ -96,7 +96,8 @@ class Tabla:
             divider_thickness=0.5, heading_row_color=tema.CABECERA_TABLA,
             data_row_color={ft.ControlState.HOVERED: tema.PRIMARIO_SUAVE}, visible=False)
         # La tabla scrollea por dentro cuando tiene muchas filas, para no empujar el resto de la pantalla.
-        self._marco = ft.Column([self._tabla], scroll=ft.ScrollMode.AUTO, spacing=0)
+        # Si la tabla es más ancha que la pantalla, scrollea hacia los costados en lugar de apretar las columnas.
+        self._marco = ft.Column([ft.Row([self._tabla], scroll=ft.ScrollMode.AUTO)], scroll=ft.ScrollMode.AUTO, spacing=0)
         self._borde = ft.Container(self._marco, border=ft.Border.all(1, tema.BORDE), visible=False,
                                    border_radius=ft.BorderRadius.all(10), clip_behavior=ft.ClipBehavior.ANTI_ALIAS)
         self._hay_texto_vacia = bool(vacia)

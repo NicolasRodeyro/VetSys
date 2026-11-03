@@ -4,8 +4,11 @@ Cada reporte es un módulo con `TITULO`, `DESCRIPCION` y `generar(filtro) -> Res
 La pantalla de reportes los ofrece en el orden de `REPORTES`.
 """
 
-from app.reportes import facturacion
+from app.reportes import facturacion, rechazos, tiempos, vacunas
 
 REPORTES = {
+    "tiempos": tiempos,
+    "rechazos": rechazos,
+    "vacunas": vacunas,
     "facturacion": facturacion,
 }

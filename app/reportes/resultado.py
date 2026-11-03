@@ -26,3 +26,7 @@ class ResultadoReporte:
     filas: list[list[str]]
     notas: list[str] = field(default_factory=list)
     grafico: Grafico | None = None
+    # Una segunda tabla opcional (por ejemplo, el detalle de lo que resume la primera).
+    detalle_titulo: str = ""
+    detalle_columnas: list[str] = field(default_factory=list)
+    detalle_filas: list[list[str]] = field(default_factory=list)
