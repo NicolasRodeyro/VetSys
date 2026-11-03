@@ -140,19 +140,21 @@ Cada uno en una transacción; suscriben los observadores al cargar muestras.
 
 ---
 
-## Fase 9 — Reportes ❓
+## Fase 9 — Reportes
 
-Antes de empezar, el autor confirma cuáles 4 implementar y qué hacer con `horas_max_transito` (usarlo en un reporte o eliminarlo).
+**Decisión tomada:** se implementan los cuatro primeros candidatos (la consigna pide al menos 4 no triviales).
+`horas_max_transito` **se usa**: el reporte de tiempos cuenta las muestras «fuera de plazo». Superar el plazo no rechaza la muestra.
 
-Candidatos (criterio "no trivial": calculan algo que no está guardado):
+Cada reporte es un módulo de `app/reportes/` con `TITULO`, `DESCRIPCION` y `generar(filtro) -> ResultadoReporte`, y una sola pantalla
+(«Reportes») los ofrece. Criterio «no trivial»: calculan algo que no está guardado.
 
-- [ ] Tiempos de tránsito y procesamiento desde el historial: mediana y P90 por clínica y transportista (SQLite no tiene `PERCENTILE_CONT`: se obtienen los tiempos con SQL y la mediana y el P90 se calculan en Python), con muestras fuera de rango.
-- [ ] Tasa de rechazo por clínica, por motivo y por tramo de la cadena de envío.
-- [ ] Vacunas pendientes por mascota con días de atraso y responsable de contacto (reutiliza `vacunas_pendientes`).
-- [ ] Facturación por clínica y servicio con comparación mes contra mes y variación %.
-- [ ] (Alternativo) Ratio de derivación por veterinario/clínica y su evolución mensual.
-
-Para cada uno: filtros (rango de fechas, clínica), tabla y gráfico.
+- [x] Infraestructura común: filtros (rango de fechas y clínica), resultado (tabla, notas, gráfico y una tabla de detalle opcional), formato, mediana y percentil, gráficos con matplotlib.
+- [x] Tiempos de tránsito y procesamiento desde el historial: mediana y P90 por clínica y transportista (SQLite no tiene `PERCENTILE_CONT`: se obtienen los tiempos con SQL y la mediana y el P90 se calculan en Python), con muestras fuera de plazo.
+- [x] Tasa de rechazo por clínica, por motivo y por transportista, con el detalle de cada muestra rechazada (precinto y temperatura de llegada).
+- [x] Vacunas pendientes por mascota con días de atraso y responsable de contacto (reutiliza `vacunas_pendientes_con_vencimiento` del dominio).
+- [x] Facturación por clínica y servicio con comparación mes contra mes y variación %.
+- [ ] (Alternativo, no se implementó) Ratio de derivación por veterinario/clínica y su evolución mensual.
+- [x] Pantalla «Reportes»: filtros (rango de fechas, clínica), tabla, gráfico y tabla de detalle.
 
 ---
 

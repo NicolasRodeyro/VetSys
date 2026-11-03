@@ -69,6 +69,7 @@ tests/
 - `persistencia/` conoce al dominio (para construir objetos) pero el dominio no la conoce.
 - Las reglas de negocio viven en el **dominio**, en la clase experta (GRASP Experto), no en los servicios.
 - **Servicios** (`servicios/`): cada función pública es un caso de uso y corre en **una transacción** (`caso_de_uso()`). Recibe ids o datos simples (lo que maneja la interfaz) y devuelve objetos del dominio. Antes de llegar al dominio, las entradas se validan y normalizan con `validaciones.py` (**sanitización**). Al cargar muestras, suscriben `RegistroTrazabilidad`. Sus errores (`EntradaInvalida`, `NoEncontrado`) heredan de `ReglaNegocio`, así la interfaz atrapa todo con un solo `except ReglaNegocio`. Para tener datos con que probar: `python scripts/sembrar.py` (o el botón «Cargar datos de prueba» de la ventana).
+- **Reportes** (`reportes/`): solo lectura, calculan algo que no está guardado. Cada uno es un módulo con `TITULO`, `DESCRIPCION` y `generar(filtro: FiltroReporte) -> ResultadoReporte` (sin nada de Flet), registrado en `REPORTES`; una sola pantalla los muestra. Estructura de un reporte: lectura con SQL parametrizado, cálculo en **Python puro** (se prueba sin base) y armado del resultado. Los montos (TEXT/Decimal) se suman con `Decimal` en Python, nunca con `SUM()` de SQL. La mediana y el P90 se calculan en Python (`estadistica.percentil`, interpolación lineal). Una muestra cuenta una vez por cada transportista que intervino en su remito. El rango de fechas se aplica a la fecha que cada reporte indica en su descripción. Los tests de los que dependen del historial insertan las fechas con SQL (`tests/reportes/datos.py`): los servicios sellan con la hora real. Los valores esperados se calculan a mano.
 - **Interfaz** (`ui/`): una clase por pantalla (`Pantalla`), con `build()` y los controles como atributos. Solo llama a `servicios/` (un test lo verifica: no importa dominio ni persistencia y no tiene SQL). Todo manejador de evento lleva `@manejador` (garantiza el redibujado: Flet no redibuja solo si durante el evento se mostró un mensaje) y los botones creados en bucles usan `functools.partial`, nunca un `lambda` con valor por defecto (Flet le pasaría el evento). Los errores se atrapan en un solo lugar, `Pantalla.ejecutar()`, con un único `except ReglaNegocio`. El «Operador» del encabezado es el responsable de cada operación. Los botones de cada remito/muestra salen de `estado.operaciones_permitidas`, no de una tabla duplicada.
 
 ---
@@ -172,7 +173,7 @@ Relaciones y decisiones clave:
 | Trazabilidad inmutable | Historial solo se agrega (Observer) + en la base, `cambios_estado` sin UPDATE ni DELETE |
 
 - Motivos de rechazo: enum `MotivoRechazo` (`PRECINTO_ROTO`, `TEMPERATURA_FUERA_DE_RANGO`). Puede haber más de uno. Se guardan en el `CambioEstado`.
-- El tiempo máximo de tránsito **no** es causa de rechazo (decisión explícita). `horas_max_transito` se revisa en la fase de reportes.
+- El tiempo máximo de tránsito **no** es causa de rechazo (decisión explícita). `horas_max_transito` se usa en el reporte de tiempos para contar las muestras «fuera de plazo»: solo se informa.
 
 ### 4.6 Enum vs. clase
 
