@@ -4,6 +4,7 @@ consulta -> orden -> muestra -> conservadora -> remito -> envío -> recepción -
 y el flujo de rechazo con re-extracción. Solo se usan las pantallas, como lo haría una persona.
 """
 
+from datetime import datetime
 from decimal import Decimal
 
 import pytest
@@ -71,7 +72,7 @@ def test_el_flujo_completo_con_rechazo_y_re_extraccion_se_recorre_desde_la_inter
     turnos.veterinario.value = str(veterinario("MP-1001").id)
     turnos.cargar_agenda()
     elegir_mascota(turnos.selector, "Toby", "paz")
-    turnos.inicio.value = "2026-11-02 12:00"
+    turnos.momento.poner(datetime(2026, 11, 2, 12, 0))
     turnos.reservar()
     assert turnos.tabla.cantidad == 1
 

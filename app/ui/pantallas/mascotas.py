@@ -10,6 +10,7 @@ from app.servicios import clientes as svc
 from app.servicios.excepciones import EntradaInvalida
 from app.ui import componentes as c
 from app.ui import tema
+from app.ui.buscador_clientes import BuscadorClientes
 from app.ui.entradas import a_fecha, en_texto, hoy_texto
 from app.ui.pantalla import Pantalla, manejador
 
@@ -28,8 +29,7 @@ class PantallaMascotas(Pantalla):
         self._mascota_id: int | None = None
 
         # 1. Cliente y sus mascotas
-        self.busqueda = c.campo("Buscar cliente (DNI, apellido o nombre)", expandir=True, al_enviar=self.buscar_clientes)
-        self.clientes = c.desplegable("Cliente", expandir=True, al_elegir=self.elegir_cliente)
+        self.buscador = BuscadorClientes(self, self.elegir_cliente, self._cliente_descartado)
         self.tabla = c.Tabla(["Nombre", "Especie", "Sexo", "Nacimiento", "Estado"], al_elegir=self.elegir_mascota,
                              texto_boton="Elegir", vacia="Este cliente todavía no tiene mascotas.")
 
@@ -60,8 +60,7 @@ class PantallaMascotas(Pantalla):
     def build(self) -> ft.Control:
         cliente = tema.seccion(
             "Cliente y mascotas",
-            tema.fila(self.busqueda, c.boton("Buscar", ft.Icons.SEARCH, self.buscar_clientes, "secundario")),
-            self.clientes, self.tabla.vista)
+            self.buscador.vista, self.tabla.vista)
         formulario = tema.seccion(
             self.titulo_formulario,
             tema.fila(self.nombre, self.especie, self.sexo, self.nacimiento),
@@ -84,6 +83,10 @@ class PantallaMascotas(Pantalla):
                                  "Elegí un cliente para ver sus mascotas. Cada mascota tiene siempre un responsable."),
             cliente, formulario, self.historia)
 
+    @property
+    def busqueda(self):
+        return self.buscador.campo
+
     @manejador
     def al_mostrar(self) -> None:
         self.ejecutar(lambda: c.poner_opciones(self.especie, ((e.nombre, e.nombre) for e in catalogos.listar_especies()), conservar=True))
@@ -91,20 +94,19 @@ class PantallaMascotas(Pantalla):
     # ----------------------------------------------------------- cliente
 
     @manejador
-    def buscar_clientes(self) -> None:
-        def accion() -> None:
-            lista = svc.buscar_clientes(self.busqueda.value or "")
-            c.poner_opciones(self.clientes, ((str(x.id), f"{x.apellido}, {x.nombre} ({x.dni})") for x in lista))
-            if not lista:
-                self.sesion.mensajero.error("No se encontró ningún cliente.")
-        self.ejecutar(accion)
-        self.elegir_cliente()
-
-    @manejador
-    def elegir_cliente(self) -> None:
-        self._cliente_id = c.clave_de(self.clientes)
+    def elegir_cliente(self, cliente) -> None:
+        """Se tocó un cliente en la lista de coincidencias: quedan a la vista sus mascotas."""
+        self._cliente_id = cliente.id
         self.nueva()
         self._recargar_mascotas()
+
+    @manejador
+    def _cliente_descartado(self) -> None:
+        """El usuario siguió escribiendo: el cliente elegido ya no corresponde."""
+        if self._cliente_id is not None:
+            self._cliente_id = None
+            self.nueva()
+            self._recargar_mascotas()
 
     def _recargar_mascotas(self) -> None:
         def accion() -> None:

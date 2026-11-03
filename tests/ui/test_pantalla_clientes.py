@@ -34,6 +34,17 @@ def test_buscar_filtra_la_tabla(pantalla):
     assert pantalla.tabla.cantidad == 0
 
 
+def test_la_tabla_se_filtra_mientras_se_escribe(pantalla):
+    assert pantalla.busqueda.on_change is not None and sin_parametros(pantalla.busqueda.on_change)
+    pantalla.busqueda.value = "paz"
+    pantalla.busqueda.on_change()
+    assert pantalla.tabla.cantidad == 1
+
+
+def test_tildar_incluir_bajas_actualiza_la_tabla_al_instante(pantalla):
+    assert pantalla.incluir_bajas.on_change is not None and sin_parametros(pantalla.incluir_bajas.on_change)
+
+
 def test_los_clientes_de_baja_solo_aparecen_si_se_pide(pantalla):
     ana = svc.buscar_clientes("30111222")[0]
     for m in ana.mascotas:

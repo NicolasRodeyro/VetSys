@@ -148,6 +148,9 @@ class Aplicacion:
 
 def main(page: ft.Page) -> None:
     tema.aplicar_tema(page, "VetSys")
+    # Calendario y reloj en español.
+    es = ft.Locale("es")
+    page.locale_configuration = ft.LocaleConfiguration(supported_locales=[es], current_locale=es)
     page.window.width = 1280
     page.window.height = 800
     aplicacion = Aplicacion(page)

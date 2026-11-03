@@ -49,12 +49,18 @@ def sin_parametros(manejador) -> bool:
 
 # --- Ayudas para manejar los selectores y listas como lo haría el usuario ---
 
+def elegir_cliente_en_la_lista(buscador, buscar: str, posicion: int = 0) -> None:
+    """Escribe en el buscador y toca el cliente de la lista, como lo haría el usuario."""
+    buscador.campo.value = buscar
+    buscador.escribir()
+    if not buscador.coincidencias:
+        raise AssertionError(f"La búsqueda {buscar!r} no encontró clientes")
+    buscador.elegir(buscador.coincidencias[posicion].id)
+
+
 def elegir_mascota(selector, nombre: str, buscar: str = "") -> None:
-    """Busca al cliente y elige la mascota `nombre` en el selector."""
-    selector.busqueda.value = buscar or nombre
-    selector.buscar()
-    if not selector.lista.options:  # se buscó por el nombre de la mascota: probar por apellido
-        raise AssertionError(f"La búsqueda {selector.busqueda.value!r} no encontró clientes")
+    """Busca al cliente (tocándolo en la lista) y elige la mascota `nombre` en el selector."""
+    elegir_cliente_en_la_lista(selector.buscador, buscar or nombre)
     opcion = next(o for o in selector.lista.options if o.text.startswith(nombre))
     selector.lista.value = opcion.key
     selector._elegida()

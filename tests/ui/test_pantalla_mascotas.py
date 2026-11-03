@@ -5,7 +5,7 @@ import pytest
 from app.servicios import clientes as svc
 from app.ui.pantallas.mascotas import PantallaMascotas
 from tests.servicios.conftest import mascota
-from tests.ui.conftest import sin_parametros
+from tests.ui.conftest import elegir_cliente_en_la_lista, sin_parametros
 
 pytestmark = pytest.mark.usefixtures("con_seed", "ahora")
 
@@ -19,10 +19,7 @@ def pantalla(sesion_ui) -> PantallaMascotas:
 
 
 def elegir_a_ana(p):
-    p.busqueda.value = "paz"
-    p.buscar_clientes()
-    p.clientes.value = p.clientes.options[0].key
-    p.elegir_cliente()
+    elegir_cliente_en_la_lista(p.buscador, "paz")
 
 
 def test_la_pantalla_ofrece_las_especies_del_catalogo(pantalla):
@@ -31,15 +28,29 @@ def test_la_pantalla_ofrece_las_especies_del_catalogo(pantalla):
 
 def test_buscar_un_cliente_y_ver_sus_mascotas(pantalla):
     elegir_a_ana(pantalla)
-    assert len(pantalla.clientes.options) == 1
+    assert pantalla.buscador.cliente is not None and pantalla.buscador.cliente.apellido == "Paz"
     assert pantalla.tabla.cantidad == 2  # Toby y Mimi
 
 
-def test_buscar_un_cliente_que_no_existe_avisa(pantalla, mensajes):
+def test_buscar_un_cliente_que_no_existe_avisa(pantalla):
     pantalla.busqueda.value = "zzz"
-    pantalla.buscar_clientes()
-    assert "No se encontró ningún cliente" in mensajes.errores[0]
+    pantalla.buscador.escribir()
+    assert pantalla.buscador.coincidencias == []
+    assert "No hay clientes que coincidan" in pantalla.buscador._resumen.value
     assert pantalla.tabla.cantidad == 0
+
+
+def test_al_tocar_el_campo_vacio_se_ofrecen_todos_los_clientes(pantalla):
+    pantalla.buscador.abrir()
+    assert pantalla.buscador.abierta and len(pantalla.buscador.coincidencias) == 10
+
+
+def test_seguir_escribiendo_descarta_al_cliente_elegido(pantalla):
+    elegir_a_ana(pantalla)
+    assert pantalla.tabla.cantidad == 2
+    pantalla.busqueda.value = "paz y algo más"
+    pantalla.buscador.escribir()
+    assert pantalla.buscador.cliente is None and pantalla.tabla.cantidad == 0
 
 
 def test_alta_de_una_mascota_para_el_cliente_elegido(pantalla, mensajes):
@@ -141,7 +152,8 @@ def test_nueva_limpia_el_formulario_y_oculta_la_historia(pantalla):
 
 
 def test_los_botones_no_reciben_el_evento(pantalla):
-    for manejador in (pantalla.buscar_clientes, pantalla.elegir_cliente, pantalla.nueva, pantalla.guardar,
+    for manejador in (pantalla.buscador.buscar, pantalla.buscador.escribir, pantalla.buscador.abrir,
+                      pantalla.buscador.cerrar, pantalla.nueva, pantalla.guardar,
                       pantalla.dar_de_baja, pantalla.reactivar, pantalla.guardar_historia, pantalla.aplicar_vacuna):
         assert sin_parametros(manejador)
 
