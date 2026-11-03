@@ -8,6 +8,7 @@ from app.ui.pantallas.mascotas import PantallaMascotas
 from app.ui.pantallas.muestras import PantallaMuestras
 from app.ui.pantallas.recepcion import PantallaRecepcion
 from app.ui.pantallas.remitos import PantallaRemitos
+from app.ui.pantallas.reportes import PantallaReportes
 from app.ui.pantallas.resultados import PantallaResultados
 from app.ui.pantallas.turnos import PantallaTurnos
 
@@ -24,4 +25,6 @@ PANTALLAS = [
     PantallaRemitos,
     PantallaRecepcion,
     PantallaResultados,
+    # Reportes
+    PantallaReportes,
 ]
