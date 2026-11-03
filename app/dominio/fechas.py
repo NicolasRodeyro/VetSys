@@ -1,8 +1,8 @@
 """Funciones de fecha que usan varias clases del dominio."""
 
-from datetime import date
 import calendar
 from datetime import date, timedelta
+
 
 def meses_entre(desde: date, hasta: date) -> int:
     """Cantidad de meses completos entre dos fechas.
@@ -13,6 +13,7 @@ def meses_entre(desde: date, hasta: date) -> int:
     if hasta.day < desde.day:
         meses -= 1  # el último mes todavía no se completó
     return meses
+
 
 def sumar_meses(fecha: date, meses: int) -> date:
     """Primer día en que se cumplen `meses` meses completos desde `fecha`.
