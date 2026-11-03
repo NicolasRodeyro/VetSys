@@ -140,19 +140,24 @@ Cada uno en una transacción; suscriben los observadores al cargar muestras.
 
 ---
 
-## Fase 9 — Reportes ❓
+## Fase 9 — Reportes
 
-Antes de empezar, el autor confirma cuáles 4 implementar y qué hacer con `horas_max_transito` (usarlo en un reporte o eliminarlo).
+**Decisiones tomadas** (resuelve el ❓ previo): se implementan los 4 reportes marcados abajo.
+`horas_max_transito` **se usa** en el reporte de tiempos (marca las muestras cuyo tránsito superó
+el máximo); no se elimina. Cada reporte: filtros (rango de fechas, clínica), tabla y gráfico, y
+corre sobre `app/reportes/` con infraestructura común (`filtros`, `formato`, `estadistica`,
+`graficos`, `resultado`) y una sola pantalla genérica (`ui/pantallas/reportes.py`).
 
-Candidatos (criterio "no trivial": calculan algo que no está guardado):
+Reportes "no triviales" (calculan algo que no está guardado):
 
-- [ ] Tiempos de tránsito y procesamiento desde el historial: mediana y P90 por clínica y transportista (SQLite no tiene `PERCENTILE_CONT`: se obtienen los tiempos con SQL y la mediana y el P90 se calculan en Python), con muestras fuera de rango.
-- [ ] Tasa de rechazo por clínica, por motivo y por tramo de la cadena de envío.
-- [ ] Vacunas pendientes por mascota con días de atraso y responsable de contacto (reutiliza `vacunas_pendientes`).
-- [ ] Facturación por clínica y servicio con comparación mes contra mes y variación %.
-- [ ] (Alternativo) Ratio de derivación por veterinario/clínica y su evolución mensual.
+- [x] Tiempos de tránsito y procesamiento desde el historial: mediana y P90 por clínica y transportista (SQLite no tiene `PERCENTILE_CONT`: se obtienen los tiempos con SQL y la mediana y el P90 se calculan en Python), con muestras fuera del máximo de tránsito. → `app/reportes/tiempos.py`
+- [x] Tasa de rechazo por clínica y por motivo (precinto roto / temperatura). (El desglose "por tramo" se dejó afuera a propósito: el rechazo se decide en la recepción, no por tramo — CLAUDE.md §4.2.) → `app/reportes/rechazos.py`
+- [x] Vacunas pendientes por mascota con días de atraso y responsable de contacto (reutiliza `HistoriaClinica.vacunas_pendientes_con_vencimiento`, no reimplementa la regla). → `app/reportes/vacunas.py`
+- [x] Facturación por clínica y servicio con comparación mes contra mes y variación %. → `app/reportes/facturacion.py`
+- [ ] (Alternativo, NO implementado) Ratio de derivación por veterinario/clínica y su evolución mensual.
 
-Para cada uno: filtros (rango de fechas, clínica), tabla y gráfico.
+Tests: cálculo puro sin base + lectura con base (`tests/reportes/`). Datos de demostración para que
+los reportes muestren información: `scripts/sembrar_operaciones.py` (ver README).
 
 ---
 

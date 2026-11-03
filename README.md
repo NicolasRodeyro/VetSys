@@ -34,9 +34,9 @@ python main.py
 
 El menú tiene dos grupos:
 
-| Atención | Laboratorio |
-|---|---|
-| Clientes, Mascotas, Turnos, Consultas, Comprobantes | Muestras, Conservadoras, Remitos, Recepción, Resultados |
+| Atención | Laboratorio | Reportes |
+|---|---|---|
+| Clientes, Mascotas, Turnos, Consultas, Comprobantes | Muestras, Conservadoras, Remitos, Recepción, Resultados | Facturación, Tiempos, Rechazo, Vacunas pendientes |
 
 Para empezar un recorrido completo: **Consultas** (registrar consulta y emitir una orden de análisis) →
 **Muestras** (extracción) → **Conservadoras** (empaquetar y precintar) → **Remitos** (crear, cerrar, despachar)
@@ -61,9 +61,14 @@ El archivo `.env` está en `.gitignore` y **nunca se commitea**.
 La aplicación ya crea la base y carga los datos de prueba sola, pero se puede hacer a mano:
 
 ```powershell
-python scripts/migrar.py     # crea la base / aplica las migraciones de db/migraciones/ que falten
-python scripts/sembrar.py    # carga los datos de prueba (no hace nada si ya hay datos)
+python scripts/migrar.py               # crea la base / aplica las migraciones de db/migraciones/ que falten
+python scripts/sembrar.py              # carga los datos de prueba (clínicas, clientes, mascotas...)
+python scripts/sembrar_operaciones.py  # OPCIONAL: carga consultas, muestras y remitos de demostración
 ```
+
+El tercer script es solo para **ver los reportes con datos**: agrega un historial de unos meses
+(consultas con comprobantes, muestras que viajan y se procesan, y algunas rechazadas) para que los
+reportes de facturación, tiempos y rechazo no salgan vacíos. No hace falta para usar el sistema.
 
 Para empezar de cero, borrar `vetsys.db`.
 
